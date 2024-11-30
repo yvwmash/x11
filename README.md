@@ -31,12 +31,12 @@ tested on Debian Linux Mint.
 
 ** COMPILE && INSTALL **
 
-   `make`
+  * `make`
    
 
 ** RUN **
 
-   `./bin/<binary name>`
+  * `./bin/<binary name>`
    
 
 ** LYRICS **
@@ -51,15 +51,22 @@ tested on Debian Linux Mint.
 
 
 /* X11 and GPU driver */
+
 X11, or GPU driver should distribute and sync a FB to monitors. 
 
+
 /* do compositing WM always have one big FB? */
+
 many FBs with a different scaling and whatelse is left behind. for now.
 
+
 /* VBLANK event for a window? */
+
 it is really **NOT a question** of getting VBLANK for a CRTC. it is **a question**, which VBLANK events will window receive?
 
+
 /* window and CRTC interop */
+
 window <=> CRTC
 
   if it moves.
