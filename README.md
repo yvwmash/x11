@@ -32,10 +32,12 @@ tested on Debian Linux Mint.
 ** COMPILE && INSTALL **
 
    `make`
+   
 
 ** RUN **
 
    `./bin/<binary name>`
+   
 
 ** LYRICS **
 
