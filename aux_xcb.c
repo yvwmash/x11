@@ -11,6 +11,29 @@
 #include "aux_xcb.h"
 #include "aux_xcb_keymap.h"
 
+/* *********************************************************************************** */
+
+static const char *randr_rotation_strings[] = {
+    [1] = "XCB_RANDR_ROTATION_0",
+    [2] = "XCB_RANDR_ROTATION_90",
+    [4] = "XCB_RANDR_ROTATION_180",
+    [8] = "XCB_RANDR_ROTATION_270",
+    [16] = "XCB_RANDR_ROTATION_REFLECT_X",
+    [32] = "XCB_RANDR_ROTATION_REFLECT_Y",
+};
+
+static const char *randr_connection_strings[] = {
+    "XCB_RANDR_CONNECTION_CONNECTED",
+    "XCB_RANDR_CONNECTION_DISCONNECTED",
+    "XCB_RANDR_CONNECTION_UNKOWN",
+};
+
+static const char *propstatus_strings[] = {
+ "NEW", "DELETE", 
+};
+
+/* *********************************************************************************** */
+
 /* */
 int aux_xcb_destroy_window(aux_xcb_ctx *ctx)
 {
@@ -109,8 +132,7 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
  if(ctx->x11ext_present) {
   xcb_void_cookie_t    cookie;
   xcb_generic_error_t *error;
-  uint32_t             mask = XCB_PRESENT_EVENT_MASK_CONFIGURE_NOTIFY
-                              | XCB_PRESENT_EVENT_MASK_COMPLETE_NOTIFY
+  uint32_t             mask = XCB_PRESENT_EVENT_MASK_COMPLETE_NOTIFY
                               | XCB_PRESENT_EVENT_MASK_IDLE_NOTIFY;
 
   ctx->x11ext_present_eid = xcb_generate_id(c);
@@ -121,6 +143,30 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
    AUX_XCB_PRINT_X11_ERROR(ctx, error);
    ctx->x11ext_present      = false;
    ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
+   ctx->x11ext_present_ev_base  = 0;
+   ctx->x11ext_present_err_base = 0;
+  }
+  free(error);
+ }
+
+ /* register for XRandR events */
+ if(ctx->x11ext_randr) {
+  xcb_void_cookie_t    cookie;
+  xcb_generic_error_t *error;
+  uint32_t             mask =   XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE
+                              | XCB_RANDR_NOTIFY_MASK_OUTPUT_CHANGE
+                              | XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE
+                              | XCB_RANDR_NOTIFY_MASK_OUTPUT_PROPERTY
+                              | XCB_RANDR_NOTIFY_MASK_PROVIDER_CHANGE
+                              | XCB_RANDR_NOTIFY_MASK_PROVIDER_PROPERTY
+                              | XCB_RANDR_NOTIFY_MASK_RESOURCE_CHANGE
+                              ;
+  cookie = xcb_randr_select_input_checked(c, window, mask);
+  error  = xcb_request_check(c, cookie);
+  if (error) {
+   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   ctx->x11ext_randr      = false;
   }
   free(error);
  }
@@ -155,6 +201,70 @@ int aux_xcb_empty_events(aux_xcb_ctx *ctx)
  return 0;
 }
 
+static void on_ev_randr_notify(xcb_connection_t *c,xcb_generic_event_t *event) {
+ xcb_randr_notify_event_t *ev   = (xcb_randr_notify_event_t *)event;
+ uint8_t                   code = ev->subCode;
+
+ (void)c;
+ (void)randr_connection_strings;
+ (void)propstatus_strings;
+
+ printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY\n");
+
+ switch(code) {
+ case XCB_RANDR_NOTIFY_CRTC_CHANGE: {
+  xcb_randr_crtc_change_t *e = &ev->u.cc;
+  (void)e;
+  printf(" ! xcb-aux: RandR: \tXCB_RANDR_NOTIFY_CRTC_CHANGE\n");
+  printf("\t\t\t\tposition of the CRTC on the screen, rotation, scaling, resolution,\n\t\t\t\trefresh rate, orientation, outputs (monitors) changed, disable/enable\n");
+  break;
+ }
+ case XCB_RANDR_NOTIFY_OUTPUT_CHANGE: {
+  xcb_randr_output_change_t *e = &ev->u.oc;
+  (void)e;
+  printf(" ! xcb-aux: RandR: \tXCB_RANDR_NOTIFY_OUTPUT_CHANGE\n");
+  printf("\t\t\t\tconnector state, resolution, refresh rate,\n\t\t\t\torientation, brightness, color settings\n");
+  break;
+ }
+ case XCB_RANDR_NOTIFY_OUTPUT_PROPERTY: {
+  xcb_randr_output_property_t   *e = &ev->u.op;
+  (void)e;
+  printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY_OUTPUT_PROPERTY\n");
+  break;
+ }
+ case XCB_RANDR_NOTIFY_PROVIDER_CHANGE: {
+  xcb_randr_provider_change_t *e = &ev->u.pc;
+  (void)e;
+  printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY_PROVIDER_CHANGE\n");
+  printf("\t\t\t\tGPU state, capabilities, linked CRTCs/outputs\n");
+  break;
+ }
+ case XCB_RANDR_NOTIFY_PROVIDER_PROPERTY: {
+  xcb_randr_provider_property_t *e = &ev->u.pp;
+  (void)e;
+  printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY_PROVIDER_PROPERTY\n");
+  break;
+ }
+ case XCB_RANDR_NOTIFY_RESOURCE_CHANGE: {
+  xcb_randr_resource_change_t *e = &ev->u.rc;
+  (void)e;
+  printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY_RESOURCE_CHANGE\n");
+  printf("\t\t\t\ta new/delete/remove of crtc, output, or mode, something reconfigured\n");
+  break;
+ }
+ }
+}
+
+/* similar to X11 screen. represents single FB for compositing WM. */
+static void on_ev_randr_screen_change(xcb_generic_event_t *event) {
+ xcb_randr_screen_change_notify_event_t *ev = (xcb_randr_screen_change_notify_event_t *)event;
+
+ printf(" ! xcb-aux: RandR: XCB_RANDR_SCREEN_CHANGE_NOTIFY\n");
+ printf(" ! xcb-aux: RandR: \troot 0x%x, timestamp %u, config_timestamp %u\n", ev->root, ev->timestamp, ev->config_timestamp);
+ printf(" ! xcb-aux: RandR: \trotation %s\n", randr_rotation_strings[ev->rotation]);
+ printf(" ! xcb-aux: RandR: \twidth %d, height %d, mwidth %d, mheight %d\n", ev->width, ev->height, ev->mwidth, ev->mheight);
+}
+
 /* */
 int aux_xcb_ev_func(aux_xcb_ctx *ctx)
 {
@@ -169,15 +279,32 @@ int aux_xcb_ev_func(aux_xcb_ctx *ctx)
  if(NULL == event)
   return 0;
 
- while(event){
+ ctx->f_window_expose = false;
+ ctx->f_eq_changed    = false;
 
-  if (event && (event->response_type == 0)){ /* error recieved */
+ while(event){
+  unsigned etyp = event->response_type & 0x7f;
+
+  if (event && (etyp == 0)){ /* error recieved */
    AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)event);
    free(event);
    return -1;
   }
+  
+  /* extension events */
+  if(ctx->x11ext_randr) {
+   if(etyp == ((unsigned)ctx->x11ext_randr_ev_base + XCB_RANDR_NOTIFY)) { /* XCB_RANDR_NOTIFY */
+    on_ev_randr_notify(ctx->conn, event);
+    ctx->f_eq_changed = true;
+    goto l_next_event;
+   } else if(etyp == ((unsigned)ctx->x11ext_randr_ev_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY)) { /* XCB_RANDR_SCREEN_CHANGE_NOTIFY */
+    on_ev_randr_screen_change(event);
+    ctx->f_eq_changed = true;
+    goto l_next_event;
+   }
+  }
 
-  switch (event->response_type & ~0x80) {
+  switch (etyp) {
 
   /* window graphics content needs update */
   case XCB_EXPOSE: {
@@ -290,6 +417,7 @@ int aux_xcb_ev_func(aux_xcb_ctx *ctx)
   break;
   } /* end event switch */
 
+l_next_event:
   free(event);
   event = xcb_poll_for_event(ctx->conn);
  } /* end while loop */
@@ -313,6 +441,9 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
  /* default out XPresent extension */
  ctx->x11ext_present      = false;
  ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
+
+ /* default out XRandR extension */
+ ctx->x11ext_randr        = false;
 }
 
 /* */
@@ -454,20 +585,63 @@ int aux_xcb_connect(aux_xcb_ctx  *ctx,
  ctx->atom_wm_frame_win      = a_wm_frame_win;
  ctx->atom_wm_frame_win_msg  = a_wm_frame_win_msg;
 
+ putchar('\n');
+ printf(" ! aux-xcb: X11 extensions\n");
+
  /* query for XPresent extension */
  {
-  const xcb_query_extension_reply_t  *rep;
+  const xcb_query_extension_reply_t *rep;
+  xcb_present_query_version_reply_t *present_version;
+
+  present_version = xcb_present_query_version_reply(c, xcb_present_query_version(c, 1, 2), NULL);
+  if (!present_version) {
+   fprintf(stderr, "Failed to query Present version\n");
+  }else {
+   printf(" ! aux-xcb: Present version: %u.%u\n", present_version->major_version, present_version->minor_version);
+   free(present_version);
+  }
 
   rep = xcb_get_extension_data(c, &xcb_present_id); /* xcb_present_id is extern variable in lib-xcb */
   if (!rep || !rep->present) {
    fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
    fprintf(stderr, " ! aux-xcb: no X11 XPresent extension.\n");
-   return -1;
   } else {
    fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   fprintf(stderr, " ! aux-xcb: X11 XPresent extension AVAILABLE.\n");
+   fprintf(stderr, " ! aux-xcb: \tX11 XPresent extension AVAILABLE.\n");
+   ctx->x11ext_present          = true;
+   ctx->x11ext_present_ev_base  = rep->first_event;
+   ctx->x11ext_present_err_base = rep->first_error;
+   printf(" ! aux-xcb: XPresent: event base: %u, error base: %u\n", rep->first_event, rep->first_error);
   }
  }
+
+ /* query for XRandR extension */
+ {
+  const xcb_query_extension_reply_t  *rep;
+  xcb_randr_query_version_reply_t    *randr_version;
+
+  randr_version = xcb_randr_query_version_reply(c, xcb_randr_query_version(c, 1, 5), NULL);
+  if (!randr_version) {
+   fprintf(stderr, "Failed to query RandR version\n");
+  }else {
+   printf(" ! aux-xcb: RandR version: %u.%u\n", randr_version->major_version, randr_version->minor_version);
+   free(randr_version);
+  }
+
+  rep = xcb_get_extension_data(c, &xcb_randr_id); /* xcb_randr_id is extern variable in lib-xcb */
+  if (!rep || !rep->present) {
+   fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   fprintf(stderr, " ! aux-xcb: no X11 XRandR extension.\n");
+  } else {
+   fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   fprintf(stderr, " ! aux-xcb: \tX11 XRandR extension AVAILABLE.\n");
+   ctx->x11ext_randr = true;
+   ctx->x11ext_randr_ev_base  = rep->first_event;
+   ctx->x11ext_randr_err_base = rep->first_error;
+   printf(" ! aux-xcb: XRandR: event base: %u, error base: %u\n", rep->first_event, rep->first_error);
+  }
+ }
+ putchar('\n');
 
  return 0;
 }
@@ -1000,6 +1174,7 @@ int aux_xcb_get_desk_worka(aux_xcb_ctx *ctx, uint32_t rc[4])
  uint32_t      *p;
 
  status = aux_xcb_get_prop(ctx, AUX_WM_PROP_WORKAREA, &ctx->screen->root, &size, (void**)&p);
+ fprintf(stderr, " =========================== N = %lu\n", size);
  if(0 == status){
   memcpy(rc, p, sizeof(uint32_t) * 4);
   free(p);
@@ -1305,7 +1480,9 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
   }
  }
 
- /* get desktop workarea size, set window gravity, move window center of the workarea */
+ /* get desktop workarea size, set window gravity, move window center of the workarea
+    breaks in the process of togglin switches for xfwm4.
+ */
  { /* wm prop workarea */
   uint32_t       *desk; /* desktops X {x,y,w,h} */
   uint32_t       *p;
@@ -1315,8 +1492,9 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
   }
   len = len / (sizeof(uint32_t) * 4);
   p   = desk;
-  for(unsigned i = 0; i < len; ++i, p += 4){
-   printf(" ! xcb: WM_PROP_WORKAREA: desktop[%u]: x:%u, y:%u, w:%u, h:%u\n", i,
+  printf(" ! aux-xcb: WM_PROP_WORKAREA: # desktops is [%lu]\n", len);
+  for(unsigned i = 0; i < len; ++i, p += 4) {
+   printf(" !  aux-xcb: WM_PROP_WORKAREA: desktop[%u]: x:%u, y:%u, w:%u, h:%u\n", i,
                                                   p[0], 
                                                   p[1], 
                                                   p[2], 
@@ -1375,6 +1553,8 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
  /* XCB, map, flush events */
  aux_xcb_flush(xcb_ctx);
  aux_xcb_map_window(xcb_ctx);
+
+ printf(" ! aux-xcb: window: %x, root: %x\n", xcb_ctx->window, xcb_ctx->screen->root);
 
  return 0;
 }

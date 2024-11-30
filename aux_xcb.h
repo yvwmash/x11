@@ -11,6 +11,7 @@
 #include <xcb/xcb_errors.h>
 #include <xcb/xcb_image.h>
 #include <xcb/present.h>
+#include <xcb/randr.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xlib-xcb.h>
@@ -30,7 +31,11 @@ extern "C" {
 typedef struct aux_xcb_ctx{
  void                    *x11_dpy;                 /* */
  bool                     x11ext_present;          /* XPresent */
- xcb_present_event_t      x11ext_present_eid;      /* */
+ uint8_t                  x11ext_present_ev_base, x11ext_present_err_base;
+ xcb_present_event_t      x11ext_present_eid;
+ bool                     x11ext_randr;            /* XRandR   */
+ uint8_t                  x11ext_randr_ev_base, x11ext_randr_err_base;
+ bool                     f_eq_changed;            /* */
 
  xcb_connection_t        *conn;                    /* */
  int                      screen_n;                /* */
