@@ -40,16 +40,22 @@ tested on Debian Linux Mint.
 ** LYRICS **
 
 /* possible source of latency */
+
 user => compositing WM => X server => DRM => GPU
 
 /* possible source of latency */
+
 user => compositing WM => X server => compositing WM => X server => DRM => GPU
+
 
 X11, or GPU driver should distribute and sync a FB to monitors. 
 
+
 many FBs with a different scaling and whatelse is left behind. for now.
 
+
 it is really **NOT a question** of getting VBLANK for a CRTC. it is **a question**, which VBLANK events will window receive?
+
 
 window <=> CRTC
 
