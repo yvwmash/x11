@@ -43,11 +43,11 @@ tested on Debian Linux Mint.
 
 /* possible source of latency */
 
-user => compositing WM => X server => DRM => GPU
+    user => compositing WM => X server => DRM => GPU
 
 /* possible source of latency */
 
-user => compositing WM => X server => compositing WM => X server => DRM => GPU
+    user => compositing WM => X server => compositing WM => X server => DRM => GPU
 
 
 X11, or GPU driver should distribute and sync a FB to monitors. 
@@ -61,8 +61,8 @@ it is really **NOT a question** of getting VBLANK for a CRTC. it is **a question
 
 window <=> CRTC
 
-  if it moves.
+    if it moves.
+    
+    if it power-offs and switches to another CRTC.
   
-  if it power-offs and switches to another CRTC.
-  
-  if the window is visible on many physical monitors.
+    if the window is visible on many physical monitors.
