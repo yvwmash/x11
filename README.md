@@ -33,7 +33,7 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 `prob_egl`     
  - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
  - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
- - OpenGL context can be created w/o having XCB, or X11 connection.
+ - OpenGL context can be created w/o XCB, or X11 connection.
 
 ## ** PREREQUISITES **
 
