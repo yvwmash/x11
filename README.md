@@ -8,6 +8,7 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 `aux_*` files represent auxiliary modules. `prob_*` files are templates.  
 
   
+  
 
 `aux_xcb`    
  - module that does a communication with X11 by means of XCB. all functionality are done as much **synchronous** as possible. that is done deliberately, to ease debugging.
