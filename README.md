@@ -3,7 +3,7 @@ x11 protocol probes
 
 The repository aim is to creat a template for a code. By the code I mean some, possibly graphical, application that uses `epoll` syscall to wait for events.
 
-** STRUCTURE **
+## ** STRUCTURE **
 
 `aux_*` files represent auxiliary modules.
 
@@ -26,9 +26,9 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 `prob_xcb_dri` - same as prob_xcb. new thing is that application enqueues messages for screen refresh updates and gets update events.
 
 `prob_egl`     - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
-               - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
+                 mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
 
-** PREREQUISITES **
+## ** PREREQUISITES **
 
 tested on Debian Linux Mint.
 
@@ -36,17 +36,17 @@ tested on Debian Linux Mint.
   
   `prob_xcb_dri` needs: `libdrm-dev`
 
-** COMPILE && INSTALL **
+## ** COMPILE && INSTALL **
 
   * `make`
    
 
-** RUN **
+## ** RUN **
 
   * `./bin/<binary name>`
    
 
-** LYRICS **
+## ** LYRICS **
 
 /* possible source of latency */
 
