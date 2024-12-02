@@ -1,0 +1,261 @@
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
+#define EGL_EGLEXT_PROTOTYPES
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglplatform.h>
+
+#include "aux_raster.h"
+#include "aux_egl.h"
+
+/* */
+void aux_zero_egl_ctx(aux_egl_ctx *ctx)
+{
+ memset(ctx, 0, sizeof(aux_egl_ctx));
+}
+
+/* */
+static bool search_elist(const char *es, const char *nm) {
+ const char *p;
+ long        len;
+
+ while((p = strstr(es, nm))) {
+  len = strlen(nm);
+  if( (p[len] == '\0') || (p[len] == ' ') ) {
+   return true;
+  }
+  es = p + len;
+ }
+
+ return false;
+}
+
+/* EGL client extensions */
+bool aux_egl_has_c_ext(const char *nm)
+{
+ const char *egl_ext_lst = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+ if(NULL == egl_ext_lst){
+  return false;
+ }
+
+ return search_elist(egl_ext_lst, nm);
+}
+
+/* EGL device extensions */
+bool aux_egl_has_de_ext(aux_egl_ctx *ctx, void *dev, const char *nm)
+{
+ const char *egl_ext_lst = ctx->fn_q_device_string(dev, EGL_EXTENSIONS);
+ if(NULL == egl_ext_lst){
+  return false;
+ }
+
+ return search_elist(egl_ext_lst, nm);
+}
+
+/* EGL display extensions */
+bool aux_egl_has_di_ext(void *dpy, const char *nm)
+{
+ const char *egl_ext_lst = eglQueryString(dpy, EGL_EXTENSIONS);
+ if(NULL == egl_ext_lst){
+  return false;
+ }
+
+ return search_elist(egl_ext_lst, nm);
+}
+
+/* */
+int aux_egl_disconnect(aux_egl_ctx *ctx)
+{
+ printf(" ! aux-egl: disconnect.\n");
+
+ if(NULL == ctx->dpy)
+  return 0;
+
+ if(NULL != ctx->rctx){
+  if(0 == eglMakeCurrent(ctx->dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+   AUX_EGL_PRINT_ERROR;
+  }
+  if(0 == eglDestroyContext(ctx->dpy, ctx->rctx)) {
+   AUX_EGL_PRINT_ERROR;
+  }
+ }
+  
+ if(0 == eglTerminate(ctx->dpy)){
+  AUX_EGL_PRINT_ERROR;
+ }
+
+ aux_zero_egl_ctx(ctx);
+
+ return 0;
+}
+
+/* */
+int   aux_egl_connect(aux_egl_ctx  *ctx, 
+                      int           config[]
+                     )
+{
+ int        status  = 0;
+ EGLConfig  egl_cfg = (void*)-1;
+
+ static const char *rq_c_ext[] = {
+ "EGL_EXT_client_extensions",
+ "EGL_EXT_device_query",
+ "EGL_EXT_device_enumeration",
+ "EGL_EXT_device_base",
+ "EGL_EXT_platform_base",
+ "EGL_EXT_platform_device",
+ NULL,
+ };
+
+ static const char *rq_de_ext[] = {
+ "EGL_EXT_device_drm",
+ NULL,
+ };
+
+ static const char *rq_di_ext[] = {
+ "EGL_KHR_create_context",
+ NULL,
+ };
+
+ (void)egl_cfg;
+ (void)config;
+ (void)ctx;
+ (void)rq_di_ext;
+
+ /* EGL client extensions */
+ for(const char **p = rq_c_ext; *p != NULL; ++p) {
+  if(false == aux_egl_has_c_ext(*p)) {
+   fprintf(stderr, " * aux-egl: one of required CLIENT extensions is missing: %s\n", *p);
+   status = 1;
+   goto l_end_egl_connect;
+  }
+ }
+
+ /* client supports below functions */
+ ctx->fn_q_devices            = (aux_egl_uint_pf)eglGetProcAddress("eglQueryDevicesEXT");
+ ctx->fn_get_platform_display = (aux_egl_vptr_pf)eglGetProcAddress("eglGetPlatformDisplayEXT");
+ ctx->fn_q_device_string      = (aux_egl_cstr_pf)eglGetProcAddress("eglQueryDeviceStringEXT");
+
+ if(NULL == ctx->fn_q_devices){
+  AUX_EGL_PRINT_ERROR;
+  status = 2;
+  goto l_end_egl_connect;
+ }
+ if(NULL == ctx->fn_get_platform_display){
+  AUX_EGL_PRINT_ERROR;
+  status = 2;
+  goto l_end_egl_connect;
+ }
+ if(NULL == ctx->fn_q_device_string){
+  AUX_EGL_PRINT_ERROR;
+  status = 2;
+  goto l_end_egl_connect;
+ }
+
+ /* GPUs */
+ if(0 == ctx->fn_q_devices(AUX_EGL_MAX_DEVICES, ctx->devices, &ctx->n_devices)){
+  AUX_EGL_PRINT_ERROR;
+  status = 2;
+ }
+
+ /* loop GPUs */
+ /* based on https://gitlab.freedesktop.org/mesa/demos/-/blob/master/src/egl/opengl/eglinfo.c */
+ {
+  void        *dpy;
+  const char  *es;
+  int          maj, min;
+
+#define SKIP_EGL_DEVICE(i, s) { AUX_EGL_PRINT_ERROR; status = 3; fprintf(stderr, " \t! aux-egl: GPU {%u} skip: %s\n", i, s); goto l_end_loop_gpus; }
+
+  for(int i = 0; i < ctx->n_devices; ++i) {
+   dpy = ctx->fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, ctx->devices[i], 0);
+   if(EGL_NO_DISPLAY == dpy){
+    SKIP_EGL_DEVICE(i, "can't get platform display");
+   }
+
+   printf(" i aux-egl: GPU {%u}:\n", i);
+   if (!eglInitialize(dpy, &maj, &min)) {
+    SKIP_EGL_DEVICE(i, "eglInitialize()");
+   }
+
+   printf("\t i aux-egl: EGL API version:    %d.%d\n", maj, min);
+   printf("\t i aux-egl: EGL vendor string:  %s\n", eglQueryString(dpy, EGL_VENDOR));
+   printf("\t i aux-egl: EGL version string: %s\n", eglQueryString(dpy, EGL_VERSION));
+   printf("\t i aux-egl: EGL client APIs:    %s\n", eglQueryString(dpy, EGL_CLIENT_APIS));
+
+   /* EGL device extensions */
+   es = ctx->fn_q_device_string(ctx->devices[i], EGL_EXTENSIONS);
+   if(NULL == es) {
+    SKIP_EGL_DEVICE(i, "no device extensions");
+   }
+   if(true == aux_egl_has_di_ext(dpy, "EGL_MESA_query_driver")) {
+    PFNEGLGETDISPLAYDRIVERNAMEPROC get_disp_driver_nm = (PFNEGLGETDISPLAYDRIVERNAMEPROC)eglGetProcAddress("eglGetDisplayDriverName");
+    if(NULL != get_disp_driver_nm) {
+     printf("\t i aux-drm: EGL driver name:    %s\n", get_disp_driver_nm(dpy));
+    }
+   }
+   for(const char **p = rq_de_ext; *p != NULL; ++p) {
+    if(false == aux_egl_has_de_ext(ctx, ctx->devices[i], *p)) {
+     SKIP_EGL_DEVICE(i, "one of required DEVICE extensions is missing");
+    }
+   }
+   
+   /* device file */
+   es = ctx->fn_q_device_string(ctx->devices[i], EGL_DRM_DEVICE_FILE_EXT);
+   if(NULL == es) {
+    SKIP_EGL_DEVICE(i, "no device file mapped");
+   }
+   printf("\t i aux-egl: EGL device file:    %s\n", es);
+
+l_end_loop_gpus:
+   if(EGL_NO_DISPLAY != dpy) {
+    eglTerminate(dpy);
+   }
+  }
+ }
+
+l_end_egl_connect:
+ return status;
+}
+
+#define ERROR_DESC(...) fprintf(stderr, " * aux-egl: %s\n", __VA_ARGS__); break
+
+/* the descriptions are taken from the eglGetError manual */
+void aux_egl_print_error(void)
+{
+ switch(eglGetError()) {
+  case(EGL_SUCCESS):
+    ERROR_DESC("The last function succeeded without error.");
+  case(EGL_NOT_INITIALIZED):
+    ERROR_DESC("EGL is not initialized, or could not be initialized, for the specified EGL display connection.");
+  case(EGL_BAD_ACCESS):
+    ERROR_DESC("EGL cannot access a requested resource (for example a context is bound in another thread).");
+  case(EGL_BAD_ALLOC):
+    ERROR_DESC("EGL failed to allocate resources for the requested operation.");
+  case(EGL_BAD_ATTRIBUTE):
+    ERROR_DESC("An unrecognized attribute or attribute value was passed in the attribute list.");
+  case(EGL_BAD_CONTEXT):
+    ERROR_DESC("An EGLContext argument does not name a valid EGL rendering context.");
+  case(EGL_BAD_CONFIG):
+    ERROR_DESC("An EGLConfig argument does not name a valid EGL frame buffer configuration.");
+  case(EGL_BAD_CURRENT_SURFACE):
+    ERROR_DESC("The current surface of the calling thread is a window, pixel buffer or pixmap that is no longer valid.");
+  case(EGL_BAD_DISPLAY):
+    ERROR_DESC("An EGLDisplay argument does not name a valid EGL display connection.");
+  case(EGL_BAD_SURFACE):
+    ERROR_DESC("An EGLSurface argument does not name a valid surface (window, pixel buffer or pixmap) configured for GL rendering.");
+  case(EGL_BAD_MATCH):
+    ERROR_DESC("Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface).");
+  case(EGL_BAD_PARAMETER):
+    ERROR_DESC("One or more argument values are invalid.");
+  case(EGL_BAD_NATIVE_PIXMAP):
+    ERROR_DESC("A NativePixmapType argument does not refer to a valid native pixmap.");
+  case(EGL_BAD_NATIVE_WINDOW):
+    ERROR_DESC("A NativeWindowType argument does not refer to a valid native window.");
+  case(EGL_CONTEXT_LOST):
+    ERROR_DESC("A power management event has occurred. The application must destroy all contexts and reinitialise OpenGL ES state and objects to continue rendering. ");
+  }
+}

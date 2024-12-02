@@ -363,7 +363,8 @@ static drmModeCrtc      * get_crtc_id(aux_drm_ctx *ctx, unsigned id) {
  return NULL;
 }
 
-int get_crtc_idx(aux_drm_ctx *ctx, drmModeCrtc *crtc) {
+/* */
+static int get_crtc_idx(aux_drm_ctx *ctx, drmModeCrtc *crtc) {
  drmModeCrtc *p;
 
  for(unsigned i = 0; i < ctx->n_crtc; ++i) {
@@ -376,7 +377,7 @@ int get_crtc_idx(aux_drm_ctx *ctx, drmModeCrtc *crtc) {
  return -1;
 }
 
-int get_con_idx(aux_drm_ctx *ctx, drmModeConnector *con) {
+static int get_con_idx(aux_drm_ctx *ctx, drmModeConnector *con) {
  drmModeConnector *p;
 
  for(unsigned i = 0; i < ctx->n_con; ++i) {
@@ -389,7 +390,7 @@ int get_con_idx(aux_drm_ctx *ctx, drmModeConnector *con) {
  return -1;
 }
 
-int get_enc_idx(aux_drm_ctx *ctx, drmModeEncoder *enc) {
+static int get_enc_idx(aux_drm_ctx *ctx, drmModeEncoder *enc) {
  drmModeEncoder *p;
 
  for(unsigned i = 0; i < ctx->n_enc; ++i) {
@@ -408,6 +409,10 @@ int get_enc_idx(aux_drm_ctx *ctx, drmModeEncoder *enc) {
 int  aux_drm_open_fd(const char *nm, aux_drm_ctx *ctx) {
  char cbuf[200];
  int  fd;
+
+ (void)get_enc_idx;
+ (void)get_con_idx;
+ (void)get_crtc_idx;
 
  snprintf(cbuf, 200, "/dev/dri/%s", nm);
 
@@ -691,12 +696,12 @@ int  aux_drm_connector_DPMS_id (aux_drm_ctx *ctx, unsigned id) {
  return false;
 }
 
-int  aux_drm_queue_sq(aux_drm_ctx *ctx,
-                      uint32_t     crtc_id,
-                      uint32_t     flags,
-                      uint64_t     sequence,        /* requested sequence to enqueue   */
-                      uint64_t    *sequence_queued, /* actual sequence that was queued */
-                      uint64_t     user_data)
+int  aux_drm_queue_sq_id(aux_drm_ctx *ctx,
+                         uint32_t     crtc_id,
+                         uint32_t     flags,
+                         uint64_t     sequence,        /* requested sequence to enqueue   */
+                         uint64_t    *sequence_queued, /* actual sequence that was queued */
+                         uint64_t     user_data)
 {
  int r;
 
