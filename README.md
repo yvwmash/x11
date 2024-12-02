@@ -26,7 +26,8 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 `prob_xcb_dri` - same as prob_xcb. new thing is that application enqueues messages for screen refresh updates and gets update events.
 
 `prob_egl`     - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
-                 mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
+               - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
+               - OpenGL context can be created w/o having XCB, or X11 connection.
 
 ## ** PREREQUISITES **
 
@@ -37,7 +38,7 @@ tested on Debian Linux Mint.
   
   > `prob_xcb_dri` needs: `libdrm-dev`
   
-  > `prob_egl` needs: `libglu1-mesa-dev` and `libegl-dev`
+  > `prob_egl` needs: `libglu1-mesa-dev`, `libegl-dev`, `libgl-dev`
 
 ## ** COMPILE && INSTALL **
 
