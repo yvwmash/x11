@@ -5,29 +5,35 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 
 ## ** STRUCTURE **
 
-`aux_*` files represent auxiliary modules.
+`aux_*` files represent auxiliary modules. `prob_*` files are templates.
 
-`prob_*` files are templates.
+`aux_xcb`    
+ - module that does a communication with X11 by means of XCB. all functionality are done as much **synchronous** as possible. that is done deliberately, to ease debugging.
 
-`aux_xcb`    - module that does a communication with X11 by means of XCB. all functionality are done as much **synchronous** as possible. that is done deliberately, to ease debugging.
+`aux_raster` 
+ - module that carry almost no use, except to creat image buffer that will be sent to X11 for display.
 
-`aux_raster` - module that carry almost no use, except to creat image buffer that will be sent to X11 for display.
+`aux_drm` 
+ - module that wraps libDRM functionality.
 
-`aux_drm`    - module that wraps libDRM functionality.
+`aux_egl`
+ - module that wraps libEGL.
 
-`aux_egl`    - module that wraps libEGL.
-
-`aux_gl`     - module that wraps libGL.
+`aux_gl` 
+ - module that wraps libGL.
 
 ===
 
-`prob_xcb`     - simplest application that creates XCB window and listens for events.
+`prob_xcb`     
+ - simplest application that creates XCB window and listens for events.
 
-`prob_xcb_dri` - same as prob_xcb. new thing is that application enqueues messages for screen refresh updates and gets update events.
+`prob_xcb_dri` 
+ - same as prob_xcb. new thing is that application enqueues messages for screen refresh updates and gets update events.
 
-`prob_egl`     - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
-               - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
-               - OpenGL context can be created w/o having XCB, or X11 connection.
+`prob_egl`     
+ - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
+ - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
+ - OpenGL context can be created w/o having XCB, or X11 connection.
 
 ## ** PREREQUISITES **
 
