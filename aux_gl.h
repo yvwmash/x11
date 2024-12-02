@@ -28,7 +28,7 @@ int aux_gl_destroy_fbo(unsigned *fb);
 
 /* */
 void  aux_gl_debug_error_cb(int         source,
-	  	                    int         type,
+                            int         type,
 			                unsigned    id,
 			                int         severity,
 			                int         length,

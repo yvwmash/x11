@@ -82,7 +82,7 @@ int aux_egl_disconnect(aux_egl_ctx *ctx)
    AUX_EGL_PRINT_ERROR;
   }
  }
-  
+
  if(0 == eglTerminate(ctx->dpy)){
   AUX_EGL_PRINT_ERROR;
  }
@@ -93,7 +93,7 @@ int aux_egl_disconnect(aux_egl_ctx *ctx)
 }
 
 /* */
-int   aux_egl_connect(aux_egl_ctx  *ctx, 
+int   aux_egl_connect(aux_egl_ctx  *ctx,
                       int           config[]
                      )
 {
@@ -202,7 +202,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx,
      SKIP_EGL_DEVICE(i, "one of required DEVICE extensions is missing");
     }
    }
-   
+
    /* device file */
    es = ctx->fn_q_device_string(ctx->devices[i], EGL_DRM_DEVICE_FILE_EXT);
    if(NULL == es) {

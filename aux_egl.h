@@ -43,7 +43,7 @@ typedef struct aux_egl_ctx {
  void  *devices[AUX_EGL_MAX_DEVICES]; /* EGLDeviceEXT */
  void  *dpy;                          /* EGLDisplay   */
  void  *rctx;                         /* EGLContext   */
- int    n_devices; 
+ int    n_devices;
  int    egl_v_maj, egl_v_min;
  int    gl_v_maj , gl_v_min;
  int    host_pixel_format;
@@ -81,9 +81,9 @@ bool aux_egl_has_dext(aux_egl_ctx *ctx, const char *nm);
 
 /* */
 void  aux_zero_egl_ctx(aux_egl_ctx *ctx);
- 
+
 /* */
-int   aux_egl_connect(aux_egl_ctx  *ctx, 
+int   aux_egl_connect(aux_egl_ctx  *ctx,
                       int           config[]);
 
 #endif

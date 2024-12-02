@@ -3,7 +3,7 @@
 #include "aux_egl.h"
 #include "aux_gl.h"
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
  int          status = 0;
 

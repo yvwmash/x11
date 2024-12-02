@@ -24,16 +24,16 @@ int aux_gl_destroy_fbo(unsigned *fb)
  return 0;
 }
 
-/* 
-   https://www.khronos.org/registry/OpenGL/extensions/KHR/KHR_debug.txt 
+/*
+   https://www.khronos.org/registry/OpenGL/extensions/KHR/KHR_debug.txt
 */
 void  aux_gl_debug_error_cb(int         source,
-	  	                    int         type,
+                            int         type,
 			                unsigned    id,
 			                int         severity,
 			                int         length,
 			                const char *message,
-			                const void *userParam ) 
+			                const void *userParam )
 {
  const char *ps_sour = NULL;
  const char *ps_type = NULL;
@@ -84,7 +84,7 @@ void  aux_gl_debug_error_cb(int         source,
         break;
     case GL_DEBUG_TYPE_MARKER:
         ps_type = "MARKER";
-        break;       
+        break;
  }
  switch(severity){
     case GL_DEBUG_SEVERITY_LOW:

@@ -48,13 +48,13 @@ mk_dirs: FORCE
 	@echo ' - make "build" and "bin" directories'
 
 # binaries
-bin/prob_xcb: $(OBJ_XCB) ./build/prob_xcb.o 
+bin/prob_xcb: $(OBJ_XCB) ./build/prob_xcb.o
 	$(CC) $(PFLAGS) $(INC) ./build/prob_xcb.o $(OBJ_XCB) -o ./bin/prob_xcb $(CFLAGS) $(LIBS_DY_XCB)
 
-bin/prob_dri: $(OBJ_XCB) $(OBJ_DRM) ./build/prob_xcb_dri.o 
+bin/prob_dri: $(OBJ_XCB) $(OBJ_DRM) ./build/prob_xcb_dri.o
 	$(CC) $(PFLAGS) $(INC) ./build/prob_xcb_dri.o $(OBJ_XCB) $(OBJ_DRM) -o ./bin/prob_dri $(CFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_XCB)
 
-bin/prob_egl: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) ./build/prob_egl.o 
+bin/prob_egl: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) ./build/prob_egl.o
 	$(CC) $(PFLAGS) $(INC) ./build/prob_egl.o $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) -o ./bin/prob_egl $(CFLAGS) $(CFLAGS_GL) $(CFLAGS_EGL) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_EGL) $(LIBS_DY_GL)
 
 # object files
