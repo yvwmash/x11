@@ -32,9 +32,12 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 
 tested on Debian Linux Mint.
 
+### Debian packages required
   > `libx11-dev`, `libx11-xcb-dev`, `libxcb1-dev`, `libxcb-keysyms1-dev`, `libxcb-util-dev`, `libxcb-image0-dev`, `libxcb-present-dev`, `libxcb-randr0-dev`
   
   > `prob_xcb_dri` needs: `libdrm-dev`
+  
+  > `prob_egl` needs: `libglu1-mesa-dev` and `libegl-dev`
 
 ## ** COMPILE && INSTALL **
 
