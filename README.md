@@ -72,8 +72,8 @@ tested on Debian Linux Mint.
 
 * window <=> CRTC
 
- - if it moves.
+  - if it moves.
     
- - if it power-offs and switches to another CRTC.
+  - if it power-offs and switches to another CRTC.
   
- - if the window is visible on many physical monitors.
+  - if the window is visible on many physical monitors.
