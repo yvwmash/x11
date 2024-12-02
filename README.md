@@ -48,7 +48,7 @@ tested on Debian Linux Mint.
 
 ## ** LYRICS **
 
-/* possible source of latency */
+> /* possible source of latency */
 
  * user => compositing WM => X server => DRM => GPU
 
