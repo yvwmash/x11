@@ -15,11 +15,18 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 
 `aux_drm`    - module that wraps libDRM functionality.
 
+`aux_egl`    - module that wraps libEGL.
+
+`aux_gl`     - module that wraps libGL.
+
+===
 
 `prob_xcb`     - simplest application that creates XCB window and listens for events.
 
 `prob_xcb_dri` - same as prob_xcb. new thing is that application enqueues messages for screen refresh updates and gets update events.
 
+`prob_egl`     - enumerate GPUs via EGL. no display server(X11) required. map EGL "devices" to DRM ones. 
+               - mapping done through comparison of EGL EGL_DRM_DEVICE_FILE_EXT device string <=> with DRM /dev/dri/card{0} filesystem path.
 
 ** PREREQUISITES **
 
