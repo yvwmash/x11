@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 
-#define AUX_EGL_MAX_DEVICES 4
+#define AUX_EGL_MAX_DEVICES  4
+#define AUX_EGL_SZ_DEV_PATH  15
 
 #define AUX_EGL_PRINT_ERROR   fprintf(stderr, " * aux-egl: %s:%s:%d\n", __FILE__, __func__, __LINE__);\
                               aux_egl_print_error();
@@ -29,6 +30,7 @@ extern const int AUX_EGL_SSBO_MAP_W;
 extern const int AUX_EGL_SSBO_MAP_P;
 extern const int AUX_EGL_SSBO_MAP_C;
 
+/* */
 typedef struct aux_glsl_uniform {
  const char *p_nm;
  const void *p_v;
@@ -38,20 +40,23 @@ typedef unsigned int(*aux_egl_uint_pf)();
 typedef const char *(*aux_egl_cstr_pf)();
 typedef void       *(*aux_egl_vptr_pf)();
 
+typedef struct aux_egl_dev {
+ void  *ph;
+ char   path[AUX_EGL_SZ_DEV_PATH + 1];
+}aux_egl_dev;
+
 /* */
 typedef struct aux_egl_ctx {
- void  *devices[AUX_EGL_MAX_DEVICES]; /* EGLDeviceEXT */
- void  *dpy;                          /* EGLDisplay   */
- void  *rctx;                         /* EGLContext   */
- int    n_devices;
- int    egl_v_maj, egl_v_min;
- int    gl_v_maj , gl_v_min;
- int    host_pixel_format;
- int    gl_pixel_format;
- int    gl_pixel_type;
- int    gl_compute_work_grp_cnt[3];
- int    gl_compute_work_grp_siz[3];
- int    gl_compute_work_grp_inv;
+ aux_egl_dev  devices[AUX_EGL_MAX_DEVICES]; /* EGLDeviceEXT */
+ void        *dpy;                          /* EGLDisplay                               */
+ void        *rctx;                         /* EGLContext(OpenGL, OpenGL ES contexts)   */
+ unsigned     n_devices;
+ int          host_pixel_format;
+ int          gl_pixel_format;
+ int          gl_pixel_type;
+ int          gl_compute_work_grp_cnt[3];
+ int          gl_compute_work_grp_siz[3];
+ int          gl_compute_work_grp_inv;
 
  /* functions */
  aux_egl_uint_pf  fn_q_devices;            /* PFNEGLQUERYDEVICESEXTPROC        */
@@ -67,6 +72,12 @@ void  aux_egl_print_error(void);
 /* */
 int aux_egl_disconnect(aux_egl_ctx *ctx);
 
+/* */
+int aux_egl_connect(aux_egl_ctx  *ctx);
+
+/* */
+int aux_egl_creat_rctx(aux_egl_ctx *ctx, const char *drm_fn_path, int config[]);
+
 /* EGL client extensions */
 bool aux_egl_has_c_ext(const char *nm);
 
@@ -81,9 +92,5 @@ bool aux_egl_has_dext(aux_egl_ctx *ctx, const char *nm);
 
 /* */
 void  aux_zero_egl_ctx(aux_egl_ctx *ctx);
-
-/* */
-int   aux_egl_connect(aux_egl_ctx  *ctx,
-                      int           config[]);
 
 #endif
