@@ -1,0 +1,76 @@
+1) Depressed cubic
+
+ - Cubics of the form t^3 + pt + q are said to be depressed.
+ - let ax^3 + bx^2 + cx + d = 0
+ - The change of variable x = t - b / 3a leads to a cubic that has no term in t^2
+ - After dividing by a one gets the depressed cubic equation
+    t^3 + pt + q = 0, with
+    t = x + b / 3a
+    p = (3ac - b^2) / 3a^2
+    q = (2b^3 - 9abc + 27a^2*d) / 27a^3
+ - The roots x_1,x_2,x_3 of the original equation are related to the roots t_1,t_2,t_3 
+   of the depressed equation by the relations
+     x_i = t_i - b / 3a, for i = 1,2,3
+
+2) Discriminant and nature of the roots
+
+ - The discriminant of the depressed cubic is 
+     -(4p^3 + 27q^2)
+ - The discriminant of the general cubic is
+    18abcd - 4b^3d + b^2c^2 - 4ac^3 - 27a^2d^2
+
+3) Nature of the roots
+ - If discriminant > 0, the cubic has three distinct real roots.
+ - If discriminant < 0,  the cubic has one real root and two non-real complex conjugate roots.
+ - If discriminant == 0,  the cubic has a multiple root. If furthermore its coefficients 
+   are real, then all of its roots are real.
+
+ - The discriminant of the depressed cubic is zero when 4p^3 + 27q^2 == 0.
+   If p is also zero, then p = q = 0 , and <0> is a triple root of the cubic.
+   If 4p^3 + 27q^2 == 0, and p != 0, then the cubic has a simple root
+     t1 = 3q/p
+   and a double root
+     t2 = t3 = -3q/2p
+
+
+4) Newton mewthod of finding cubic root of a polinome:
+
+ - Using the point (x0, f(x0)), we can obtain the equation for the tangent line at
+   this point, and it is
+
+    y − f(x0) = f`(x0)(x − x0).
+
+ - If we let the x-intercept of this line be the point x1, 
+   we have the following equation.
+
+    -f(x0) = f`(x0)(x1 − x0)  
+
+ - Solving this equation for x1, we obtain.
+
+    x1 = x0 - f(x0)/f`(x0)
+
+ - Now, repeat the same steps using our new point x1 to get x2. 
+   Continuing these same actions recursively, we will be able to represent our pattern as
+
+    xn+1 = xn - f(xn)/f`(xn), where f`(xn) != 0
+
+ - What we want to do is observe the behavior after iteration. As
+   n → ∞, this system exhibits several possible behaviors.
+
+   - The first and most trivial is where x0 is a root of the polynomial f, 
+     and here we see that xn = x0 for all n.
+   - The second type of behavior occurs when x0 is not a root of our polynomial 
+	 and f`(x0) = 0.
+     This tells us that we cannot use Newton’s Method, and our orbit will will go off, 
+     or converge, to infinity.
+   - In the third type, if in the orbit one of the previous points is repeated, 
+     we will have a cycling behavior in which none of the points are roots.
+
+ - We will be considering throughout the remainder of our discussion the following
+   function defining Newton’s Method on a map f : C → C
+
+    Nf(z) = z − f(z)/f`(z).
+
+ - Starting with some initial approximate value z0, we define the (n + 1) approximation
+   by zn+1 = Nf(zn).
+ 

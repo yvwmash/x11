@@ -1,7 +1,11 @@
 #include <stdio.h>
 
+extern "C" {
 #include "aux_egl.h"
 #include "aux_gl.h"
+}
+
+#include "vg_algebra/geometry.h"
 
 int main(int argc, char *argv[])
 {
