@@ -98,10 +98,15 @@ int main(int argc, char** argv) {
 
         // Convert filtered contour to JSON format
         json_object* polygon = json_object_new_array();
+		int          w       = image.cols;
+		int          h       = image.rows;
         for (const auto& pt : filtered_approx) {
+			double x = 2.0 * (pt.x - 0.0) / (w - 0.0) - 1.0; /* map to -1, 1 range */
+			double y = 2.0 * (pt.y - 0.0) / (h - 0.0) - 1.0; /* map to -1, 1 range */
+
             json_object* point = json_object_new_object();
-            json_object_object_add(point, "x", json_object_new_int(pt.x));
-            json_object_object_add(point, "y", json_object_new_int(pt.y));
+            json_object_object_add(point, "x", json_object_new_double(x));
+            json_object_object_add(point, "y", json_object_new_double(y));
             json_object_array_add(polygon, point);
         }
 
@@ -111,7 +116,7 @@ int main(int argc, char** argv) {
 
     // Write the JSON data to a file
     {
-     int         fd = open("out0.json", O_CLOEXEC|O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+     int         fd = open("./out/out0.json", O_CLOEXEC|O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
 	 size_t      l;
      const char *s;
 

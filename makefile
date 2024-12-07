@@ -9,7 +9,7 @@ PFLAGS   = -D_XOPEN_SOURCE=700 -D_GNU_SOURCE
 CFLAGS   = -std=c2x -Wall -Wpedantic -Wextra -Wmissing-prototypes -Wmissing-declarations -O0 -ggdb3 -fpic
 CXXFLAGS = -std=c++23 -Wall -Wpedantic -Wextra -Wmissing-declarations -O0 -ggdb3 -fpic
 CFLAGS_DRM     = $(shell pkg-config --cflags libdrm)
-CFLAGS_EGL     = $(shell pkg-config --cflags egl glu)
+CFLAGS_EGL     = $(shell pkg-config --cflags egl glu json-c)
 CFLAGS_GL      = $(shell pkg-config --cflags gl glu)
 CFLAGS_OPENCV  = $(shell pkg-config --cflags opencv4 json-c)
 
@@ -43,7 +43,7 @@ OPENCV_IMG2POLY = img2poly
 INC     = -I./include $(shell pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image libdrm)
 LIBS_DY_XCB = -Wl,-Bdynamic $(shell pkg-config --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr)
 LIBS_DY_DRM = -Wl,-Bdynamic $(shell pkg-config --libs  libdrm)
-LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu)
+LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu json-c)
 LIBS_DY_GL  = -Wl,-Bdynamic $(shell pkg-config --libs  gl glu)
 LIBS_DY_CV  = $(shell pkg-config --libs opencv4 json-c)
 
@@ -72,9 +72,10 @@ rebuild: FORCE
 	$(MAKE)
 
 mk_dirs: FORCE
-	@echo ' - make build directories'
-	@mkdir -p bin build
 	@echo ' - make "build" and "bin" directories'
+	@mkdir -p bin build
+	@echo ' - make "out" directory'
+	@mkdir -p out
 
 # binaries
 bin/prob_xcb: $(OBJ_XCB) ./build/prob_xcb.o
