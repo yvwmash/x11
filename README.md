@@ -7,6 +7,8 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 
 `aux_*` files represent auxiliary modules. `prob_*` files are templates.  
 
+`opencv_image2poly.cpp` is a command line tool to convert raster image polygon contours to JSON format.
+
 ===========================================================================
 
 `aux_xcb`    
@@ -39,7 +41,7 @@ The repository aim is to creat a template for a code. By the code I mean some, p
 
 ## ** PREREQUISITES **
 
-tested on Debian Linux Mint.
+Debian.
 
 ### Debian packages required
   > `libx11-dev`, `libx11-xcb-dev`, `libxcb1-dev`, `libxcb-keysyms1-dev`, `libxcb-util-dev`, `libxcb-image0-dev`, `libxcb-present-dev`, `libxcb-randr0-dev`
@@ -47,6 +49,8 @@ tested on Debian Linux Mint.
   > `prob_xcb_dri` needs: `libdrm-dev`
   
   > `prob_egl` needs: `libglu1-mesa-dev`, `libegl-dev`, `libgl-dev`
+ 
+  > `img2poly` needs: `libopencv-dev`, `libjson-c-dev`
 
 ## ** COMPILE && INSTALL **
 
