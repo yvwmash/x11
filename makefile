@@ -43,7 +43,7 @@ OPENCV_IMG2POLY = img2poly
 INC     = -I./include $(shell pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image libdrm)
 LIBS_DY_XCB = -Wl,-Bdynamic $(shell pkg-config --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr)
 LIBS_DY_DRM = -Wl,-Bdynamic $(shell pkg-config --libs  libdrm)
-LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu json-c)
+LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu)
 LIBS_DY_GL  = -Wl,-Bdynamic $(shell pkg-config --libs  gl glu)
 LIBS_DY_CV  = $(shell pkg-config --libs opencv4 json-c)
 
