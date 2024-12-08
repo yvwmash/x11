@@ -39,6 +39,7 @@ XCB_PROB = prob_xcb
 DRI_PROB = prob_dri
 EGL_PROB = prob_egl
 OPENCV_IMG2POLY = img2poly
+CPU_COMPUTE0    = cpu_compute0
 
 INC     = -I./include $(shell pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image libdrm)
 LIBS_DY_XCB = -Wl,-Bdynamic $(shell pkg-config --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr)
@@ -48,17 +49,24 @@ LIBS_DY_GL  = -Wl,-Bdynamic $(shell pkg-config --libs  gl glu)
 LIBS_DY_CV  = $(shell pkg-config --libs opencv4 json-c)
 
 INL_SRC =
-BIN  = bin/$(XCB_PROB) bin/$(DRI_PROB) bin/$(EGL_PROB) bin/$(OPENCV_IMG2POLY)
+BIN  = bin/$(XCB_PROB)\
+       bin/$(DRI_PROB)\
+       bin/$(EGL_PROB)\
+       bin/$(OPENCV_IMG2POLY)\
+       bin/$(CPU_COMPUTE0)
+
 OBJ_XCB  = ./build/aux_xcb.o\
 	       ./build/aux_raster.o
 
 OBJ_DRM  = ./build/aux_drm.o
 
+OBJ_VG   = ./build/fequals.o
+
 OBJ_EGL  = ./build/aux_egl.o\
-           ./build/aux_gl.o\
-           ./build/fequals.o
+           ./build/aux_gl.o
 
 OBJ_OPENCV = ./build/opencv_image2poly.o
+OBJ_CPU_COMPUTE0 = ./build/cpu_compute0.o
 
 all: build
 
@@ -90,6 +98,9 @@ bin/prob_egl: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) ./build/prob_egl.o
 bin/img2poly: $(OBJ_OPENCV)
 	$(CXX) $(PFLAGS) $(INC) $(OBJ_OPENCV) -o ./bin/img2poly $(CXXFLAGS) $(CFLAGS_OPENCV) $(LIBS_DY_CV)
 
+bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
+	$(CXX) $(PFLAGS) $(INC) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(CXXFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB)
+
 # object files
 build/prob_xcb.o: prob_xcb.c $(DEPS)
 	$(CC) $(PFLAGS) $(INC) -c prob_xcb.c -o ./build/prob_xcb.o  $(CFLAGS)
@@ -120,5 +131,8 @@ build/aux_gl.o: aux_gl.c $(DEPS)
 
 ./build/opencv_image2poly.o: opencv_image2poly.cpp
 	$(CXX) $(PFLAGS) $(INC) -c opencv_image2poly.cpp -o ./build/opencv_image2poly.o  $(CXXFLAGS) $(CFLAGS_OPENCV)
+
+build/cpu_compute0.o: cpu_compute0.cpp $(DEPS)
+	$(CXX) $(PFLAGS) $(INC) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CXXFLAGS)
 
 FORCE:
