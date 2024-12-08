@@ -12,6 +12,7 @@ CFLAGS_DRM     = $(shell pkg-config --cflags libdrm)
 CFLAGS_EGL     = $(shell pkg-config --cflags egl glu json-c)
 CFLAGS_GL      = $(shell pkg-config --cflags gl glu)
 CFLAGS_OPENCV  = $(shell pkg-config --cflags opencv4 json-c)
+CFLAGS_CPU0    = $(shell pkg-config --cflags json-c)
 
 # -fsanitize=address,leak,signed-integer-overflow,bounds,bounds-strict,float-cast-overflow,pointer-overflow\
 
@@ -47,6 +48,7 @@ LIBS_DY_DRM = -Wl,-Bdynamic $(shell pkg-config --libs  libdrm)
 LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu)
 LIBS_DY_GL  = -Wl,-Bdynamic $(shell pkg-config --libs  gl glu)
 LIBS_DY_CV  = $(shell pkg-config --libs opencv4 json-c)
+LIBS_DY_CPU0 = $(shell pkg-config --libs json-c)
 
 INL_SRC =
 BIN  = bin/$(XCB_PROB)\
@@ -99,7 +101,7 @@ bin/img2poly: $(OBJ_OPENCV)
 	$(CXX) $(PFLAGS) $(INC) $(OBJ_OPENCV) -o ./bin/img2poly $(CXXFLAGS) $(CFLAGS_OPENCV) $(LIBS_DY_CV)
 
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
-	$(CXX) $(PFLAGS) $(INC) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(CXXFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB)
+	$(CXX) $(PFLAGS) $(INC) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(CXXFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
 # object files
 build/prob_xcb.o: prob_xcb.c $(DEPS)
@@ -133,6 +135,6 @@ build/aux_gl.o: aux_gl.c $(DEPS)
 	$(CXX) $(PFLAGS) $(INC) -c opencv_image2poly.cpp -o ./build/opencv_image2poly.o  $(CXXFLAGS) $(CFLAGS_OPENCV)
 
 build/cpu_compute0.o: cpu_compute0.cpp $(DEPS)
-	$(CXX) $(PFLAGS) $(INC) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CXXFLAGS)
+	$(CXX) $(PFLAGS) $(INC) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CFLAGS_CPU0) $(CXXFLAGS)
 
 FORCE:
