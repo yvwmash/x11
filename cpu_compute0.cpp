@@ -1,4 +1,6 @@
 extern "C" {
+#include <climits>
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +33,10 @@ extern "C" {
 
 /* ============================================================================================== */
 
+typedef pt2<double> pt2d;
+
+/* ============================================================================================== */
+
 /* defines for epoll */
 #define MAXEVENTS 64
 #define SET_EV(_ev,_fd,_events) {\
@@ -50,6 +56,107 @@ static          bool f_display_change   = false; /* */
 
 /* ============================================================================================== */
 
+/*  */
+static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_v) {
+ int                 status = 0;
+ int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
+ unsigned            tv = 0;
+ struct json_object *parsed_json;
+
+ *va  = NULL;
+ *n_p = 0;
+ *n_v = NULL;
+
+ if (fd < 0) {
+  fprintf(stderr, " * open contours file %s\n\t%s\n", fn, strerror(errno));
+  status = 1;
+  goto l_end_read_contours;
+ }
+
+ parsed_json = json_object_from_fd(fd);
+ close(fd);
+
+ if ((NULL == parsed_json) || (json_object_get_type(parsed_json) != json_type_array)) {
+  fprintf(stderr, " * parsing JSON or invalid format\n");
+  status = 2;
+  goto l_end_read_contours;
+ }
+
+ /* # of polygons */
+ *n_p = json_object_array_length(parsed_json);
+
+ /* total # of vertices */
+ for (unsigned pi = 0; pi < *n_p; ++pi) {
+  struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
+
+  if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
+   fprintf(stderr, " * invalid polygon format at index %u\n", pi);
+   continue;
+  }
+  tv += json_object_array_length(a_poly);
+ }
+
+
+ /* allocate */
+ *n_v = (unsigned*)malloc(*n_p * sizeof(unsigned));
+ if(NULL == *n_v) {
+  status = 3;
+  goto l_end_read_contours;
+ }
+ *va = (pt2d*)malloc(tv * sizeof(pt2d));
+ if(NULL == *va) {
+  status = 3;
+  goto l_end_read_contours;
+ }
+
+ /* iterate through polygons */
+ tv = 0;
+ for (unsigned pi = 0; pi < *n_p; ++pi) {
+  struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
+  unsigned            n;
+ 
+  if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
+   fprintf(stderr, " * invalid polygon format at index %u\n", pi);
+   continue;
+  }
+ 
+  n          = json_object_array_length(a_poly);
+  (*n_v)[pi] = n;
+ 
+  /* polygon contour */
+  for (unsigned ci = 0; ci < n; ++ci, ++tv) {
+   struct json_object *pt = json_object_array_get_idx(a_poly, ci);
+   struct json_object *x, *y;
+
+   if (json_object_object_get_ex(pt, "x", &x) && json_object_object_get_ex(pt, "y", &y)) {
+    *(*va + tv) = {(double)json_object_get_double(x), (double)json_object_get_double(y)};
+   } else {
+    fprintf(stderr, " * invalid point format at polygon %u, vertex %u\n", pi, ci);
+   }
+  }
+ }
+
+l_end_read_contours:
+ if(0 != status) {
+  if(NULL != *va) {
+   free(*va);
+   *va = NULL;
+  }
+  *n_p = 0;
+  if(NULL != *n_v) {
+   free(*n_v);
+   *n_v = NULL;
+  }
+ }
+ if(NULL != parsed_json) {
+  json_object_put(parsed_json);
+ }
+ 
+ return status;
+}
+
+/* ============================================================================================== */
+
 /* */
 int main(int argc, char *argv[])
 {
@@ -64,6 +171,11 @@ int main(int argc, char *argv[])
  struct signalfd_siginfo  siginf;
  aux_xcb_ctx              xcb_ctx;
  aux_drm_ctx              drm_ctx;
+
+ /* polygons */
+ pt2d                    *v_poly_vert;
+ unsigned                *n_poly_vert;
+ unsigned                 n_poly;
 
  /* set up signals */
  sigemptyset(&mask_sigs);
@@ -212,6 +324,71 @@ int main(int argc, char *argv[])
   goto main_terminate;
  }
 
+ /* read polygon contours */
+ if(0 != read_contours("./out/out0.json", &v_poly_vert, &n_poly, &n_poly_vert)) {
+  status = 2;
+  goto main_terminate;
+ }
+ {
+  unsigned i = 0;
+  unsigned vi;
+  for(unsigned pi = 0; pi < n_poly; ++pi) {
+   unsigned n = n_poly_vert[pi];
+ 
+   printf("poly: %u\n", pi);
+   for(vi = 0; vi < n; ++vi) {
+    printf("\tv[%u]: %f, %f\n", vi, v_poly_vert[i + vi].x, v_poly_vert[i + vi].y);
+   }
+   i += vi;
+  }
+ }
+
+ /* display polygon vertices */
+ {
+  #define COLOR 0xFF0000FF
+
+  unsigned  bf_w = xcb_ctx.img_raster_buf.w;
+  unsigned  bf_h = xcb_ctx.img_raster_buf.h;
+  auto     *pbf  = &xcb_ctx.img_raster_buf;
+  double    U    = 1.0 / std::max(bf_w, bf_h);
+  double    R    = 30.0 * U;
+
+  printf(" ! U: %f\n", U);
+  printf(" ! R: %f\n", R);
+
+  assert(xcb_ctx.img_raster_buf.bpp == 32);
+  assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
+  assert(xcb_ctx.img_raster_buf.stride % (xcb_ctx.img_raster_buf.bpp / CHAR_BIT) == 0);
+  assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
+
+  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) {
+   for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
+    double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
+    double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
+    unsigned  tvi = 0;
+    unsigned  vi;
+
+	for(unsigned pi = 0; pi < n_poly; pi += 1) {
+	 unsigned  nv  = n_poly_vert[pi];
+
+     for(vi = 0;  vi < nv; vi += 1) {
+      pt2d   pt = v_poly_vert[tvi + vi];
+      double d	= distance({x,y}, pt);
+
+	  if(d < 0.001)
+      printf(" ! P = {%u, %u}, PX = {%f, %f}, V = {%f, %f}, d = %f\n", pix_x, pix_y, x, y, pt.x, pt.y, d);
+
+      if(d < R) {
+       aux_raster_putpix(pix_x, pix_y, COLOR, pbf);
+      }
+     }
+     tvi += vi;
+    }
+   }
+  }
+  
+ }
+
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
  while(1){
@@ -288,9 +465,9 @@ main_terminate:
   perror(" * sigprocmask(SIG_SETMASK, &mask_osigs, NULL)");
   status = 1;
  }
- //~ if(dri_fd > 0) {
-  //~ close(dri_fd);
- //~ }
+ if(dri_fd > 0) {
+  close(dri_fd);
+ }
  if(sig_fd != -1){
   close(sig_fd);
  }
@@ -299,6 +476,12 @@ main_terminate:
  }
  if(ep_evs){
   free(ep_evs);
+ }
+ if(NULL != v_poly_vert) {
+  free(v_poly_vert);
+ }
+ if(NULL != n_poly_vert) {
+  free(n_poly_vert);
  }
 
  printf("normal process termination\n");

@@ -50,17 +50,31 @@ static std::vector<cv::Point> remove_close_vertices(const std::vector<cv::Point>
     return filtered_contour;
 }
 
+#define USAGE { fprintf(stderr, "usage: imgc2poly [-nd] <image_path>\n"); return 0; }
+
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        fprintf(stderr, "usage: ./imgc2poly <image_path>\n");
-        return 0;
-    }
+	const char *fn       = NULL;
+	bool        bdisplay = true;
+
+	if(1 == argc) {
+		USAGE;
+    }else if(2 == argc) {
+		fn = argv[1];
+    }else if(3 == argc) {
+		fn       = argv[2];
+		bdisplay = false;
+
+        if(0 != strcmp("-nd", argv[1])) {
+			USAGE;
+        }
+    }else {
+		USAGE;
+	}
 
     // Read the input image
-    cv::Mat image = cv::imread(argv[1]);
-
+    cv::Mat image = cv::imread(fn);
     if (image.empty()) {
-        fprintf(stderr, " * could not open the image %s\n", argv[1]);
+        fprintf(stderr, " * could not open the image %s\n", fn);
         return 1;
     }
 
@@ -68,13 +82,9 @@ int main(int argc, char** argv) {
     cv::Mat gray;
     cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
-    // Apply a Gaussian blur to reduce noise
-    cv::Mat blurred;
-    cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 1.5);
-
     // Perform Canny edge detection
     cv::Mat edges;
-    cv::Canny(blurred, edges, 100, 200); // lower and upper thresholds
+    cv::Canny(gray, edges, 100, 200); // lower and upper thresholds
 
     // Find contours in the edge-detected image
     std::vector<std::vector<cv::Point>> contours;
@@ -86,15 +96,20 @@ int main(int argc, char** argv) {
     // Create a JSON object to store the contours
     json_object* json_polygons = json_object_new_array();
 
+	std::vector<cv::Point> approx_verices;
+
     // Iterate over all the contours
     for (size_t i = 0; i < contours.size(); ++i) {
         // Approximate the contour to a polygon
-        double epsilon = 0.01 * cv::arcLength(contours[i], true); // Adjust epsilon for accuracy
+        double epsilon = 0.005 * cv::arcLength(contours[i], true); // Adjust epsilon for accuracy
         std::vector<cv::Point> approx;
         cv::approxPolyDP(contours[i], approx, epsilon, true);
 
         // Remove close vertices
         std::vector<cv::Point> filtered_approx = remove_close_vertices(approx, min_distance);
+		if(bdisplay) {
+			approx_verices.insert(approx_verices.end(), filtered_approx.begin(), filtered_approx.end());
+		}
 
         // Convert filtered contour to JSON format
         json_object* polygon = json_object_new_array();
@@ -133,6 +148,23 @@ int main(int argc, char** argv) {
      // Free JSON objects
      json_object_put(json_polygons);
     }
+
+	if(bdisplay) {
+		// Draw the original contour
+		cv::drawContours(image, contours, -1, cv::Scalar(0, 0, 0), 2);
+		// Draw circles on the vertices of the polygon
+		for (size_t i = 0; i < approx_verices.size(); i++) {
+			cv::circle(image, approx_verices[i], 5, cv::Scalar(0, 0, 0), -1);
+		}
+		cv::imshow("Contour Approximation", image);
+		while (true) {
+			int k = cv::waitKey(0);
+			if (k) {
+				break;
+			}
+		}
+	}
+
 
     return 0;
 }

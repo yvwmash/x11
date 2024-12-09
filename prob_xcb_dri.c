@@ -434,9 +434,9 @@ main_terminate:
   perror(" * sigprocmask(SIG_SETMASK, &mask_osigs, NULL)");
   status = 1;
  }
- //~ if(dri_fd > 0) {
-  //~ close(dri_fd);
- //~ }
+ if(dri_fd > 0) {
+  close(dri_fd);
+ }
  if(sig_fd != -1){
   close(sig_fd);
  }
