@@ -18,6 +18,9 @@ struct vec2 {
  vec2() {};
  vec2(I x, I y) : x(x), y(y) {};
 
+ /* explicit copy assignment operator */
+ vec2& operator = (const vec2& r) = default;
+
  /* conversion */
  explicit operator pt2<I>() const;
 

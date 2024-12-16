@@ -47,6 +47,12 @@ uint32_t ui_rgb(const vec3<I>& v);
 template <typename I>
 uint32_t ui_rgb(const vec4<I>& v);
 
+/* */
+template <typename I>
+const vec3<I>& rgb_ui(uint32_t c, vec3<I>& v);
+template <typename I>
+const vec4<I>& rgb_ui(uint32_t c, vec4<I>& v);
+
 /* +++ */
 
 /* */
@@ -140,6 +146,17 @@ uint32_t ui_rgb(const vec4<I>& v){
  return (((uint8_t)(v.x * 255.0))   << 16) 
         | (((uint8_t)(v.y * 255.0)) << 8)
         | (((uint8_t)(v.z * 255.0)) << 0);
+}
+
+/* */
+template <typename I>
+const vec3<I>& rgb_ui(uint32_t c, vec3<I>& v) {
+ return v = {((c >> 16) & 0xFF) / 255.0, ((c >> 8) & 0xFF) / 255.0, (c & 0xFF) / 255.0};
+}
+
+template <typename I>
+const vec4<I>& rgb_ui(uint32_t c, vec4<I>& v) {
+ return v = {((c >> 24) & 0xFF) / 255.0, ((c >> 16) & 0xFF) / 255.0, ((c >> 8) & 0xFF) / 255.0, (c & 0xFF) / 255.0};
 }
 
 #endif

@@ -1,16 +1,2 @@
-pixel travel
-user => compositing WM => X server => DRM => GPU
-X11, or GPU driver should distribute and sync a FB to monitors. for example 1kpx@60Hz and >1kpx@100Hz.
-many FBs with a different scaling and whatelse is left behind. for now.
-it is really NOT a question of getting VBLANK for a CRTC. it is a question, which VBLANK events will window receive? 
- window <=> CRTC
- if it moves ;)
- if it power-offs and switches to another CRTC ;)
- DRM_VBLANK_SECONDARY, yeah i have only two. but what if they are multiple? ;)
-
-xfwm4, DRM, multi-monitor
- 1* with no scale factor
-  one large FB
- 2* with scale factor for a CRTC
-  different FBs
-  
+trim trailing whitespaces from file
+	sed -Ei 's/[ \t]+$//' <file name>

@@ -41,6 +41,11 @@ int aux_raster_putpix(int              x,
                       aux_raster_buf  *pixels);
 
 /* */
+uint32_t aux_raster_getpix(int              x,
+                           int              y,
+                           aux_raster_buf  *pixels);
+
+/* */
 int aux_raster_line(int              x0, 
                     int              y0, 
                     int              x1, 

@@ -33,7 +33,10 @@ extern "C" {
 
 /* ============================================================================================== */
 
-typedef pt2<double> pt2d;
+typedef pt2<double>  pt2d;
+typedef vec2<double> vec2d;
+typedef vec3<double> vec3d;
+typedef vec4<double> vec4d;
 
 /* ============================================================================================== */
 
@@ -238,6 +241,9 @@ int main(int argc, char *argv[])
  /* print some DRM statistics */
  aux_drm_print_ctx(&drm_ctx);
 
+#define WIN_W 1024
+#define WIN_H 1024
+
  /* create shared memory that will be used later 
     as a raster buffer of the window. 
  */
@@ -248,14 +254,14 @@ int main(int argc, char *argv[])
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     return -1;
    }
-   if(ftruncate(mem_fd, 311 * 673 * 4) < 0){
+   if(ftruncate(mem_fd, WIN_W * WIN_H * 4) < 0){
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     close(mem_fd);
     return -1;
    }
 
-  int config[] = {AUX_XCB_CONF_WIN_WIDTH,  311,
-                  AUX_XCB_CONF_WIN_HEIGHT, 673,
+  int config[] = {AUX_XCB_CONF_WIN_WIDTH,  WIN_W,
+                  AUX_XCB_CONF_WIN_HEIGHT, WIN_H,
                   AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
                   AUX_XCB_CONF_FB_MFD_FD,  mem_fd,
                   0,0,
@@ -345,45 +351,134 @@ int main(int argc, char *argv[])
 
  /* display polygon vertices */
  {
+  pt2d     *vertices = v_poly_vert;
+  unsigned  np       = n_poly;
+  unsigned *npv      = n_poly_vert;
+
   #define COLOR 0xFF0000FF
 
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
   unsigned  bf_h = xcb_ctx.img_raster_buf.h;
   auto     *pbf  = &xcb_ctx.img_raster_buf;
-  double    U    = 1.0 / std::max(bf_w, bf_h);
+  double    U    = 2.0 / std::min(bf_w, bf_h);
   double    R    = 30.0 * U;
 
-  printf(" ! U: %f\n", U);
-  printf(" ! R: %f\n", R);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
+  /* return minimum distance between line segment vw and point p */
+  auto dist_segment = [&](pt2d p, pt2d v, pt2d w) -> double {
+    vec2d  r  = w - v;
+    double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
+
+    if (l2 == 0.0) return distance(p, v);   /* v == w case */
+    /* consider the line extending the segment, parameterized as v + t (w - v). */
+    /* find projection of point p onto the line.                                */
+    /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
+    /* clamp t from [0,1] to handle points outside the segment vw.              */
+    /* pp = v + t * r; pp is a point where projection falls on the segment      */
+    double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
+
+    return distance(p, v + t * r);
+  };
+
+#pragma GCC diagnostic pop
+
+  /* return minimum distance between line segment vw and point p */
+  auto sq_dist_segment = [&](pt2d p, pt2d v, pt2d w) -> double {
+   vec2d  r  = w - v;
+   double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
+
+   if (l2 == 0.0) return distance(p, v);   /* v == w case */
+   /* consider the line extending the segment, parameterized as v + t (w - v). */
+   /* find projection of point p onto the line.                                */
+   /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
+   /* clamp t from [0,1] to handle points outside the segment vw.              */
+   double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
+
+   v = v + t * r;  /* projection falls on the segment */
+   r = v - p;
+   return r.x*r.x + r.y*r.y; /* squared distance */
+  };
 
   assert(xcb_ctx.img_raster_buf.bpp == 32);
   assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
   assert(xcb_ctx.img_raster_buf.stride % (xcb_ctx.img_raster_buf.bpp / CHAR_BIT) == 0);
   assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
+  assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
 
-  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) {
+  double  t0 = 0.0, t1 = 0.0;
+  double  th     = 3.0 * U;   /* thickness */
+  double  th_2   = th * th;   /* thinckness squared */
+  double  bl     = 1.0 * U;         /* blur */
+  double  lim    = th + bl;   /* limit to test distance function for */
+  double  lim_2  = lim * lim; /* limit squared */
+  /* colors */
+  vec3d   c_v    = vec3d(0.0, 1.0, 0.0); /* RGB */
+  vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB */
+  vec3d   dst_c;
+  vec4d   fout_c;
+
+  printf(" ! U   : %f\n", U);
+  printf(" ! U2  : %f\n", U * U);
+  printf(" ! R   : %f\n", R);
+  printf(" ! th_2: %f\n", th_2);
+  printf(" ! L2  : %f\n", lim_2);
+  printf(" ! lim : %f\n", lim);
+
+  printf(" LERP: %f\n", std::lerp(1.0, 0.0, 1.0));
+  vec3d vec = mix( vec3d{1.0, 1.0, 1.0}, vec3d{0.0, 0.0, 0.0}, 1.0);
+  printf(" MIX : %f\n", vec.x);
+  vec4d out_c = vec4d(mix(vec3d{1.0, 1.0, 1.0}, {0,0,0}, 1.0), 1.0);
+  printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
+  out_c.x = 1.0;
+  printf(" UI  : %08x\n", ui_argb(out_c));
+  //~ exit(0);
+
+  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
-    unsigned  tvi = 0;
-    unsigned  vi;
+    pt2d      p   = {x,y};
+    pt2d      v0, v1;
+    unsigned  vi = 0;
+    double d;
 
-	for(unsigned pi = 0; pi < n_poly; pi += 1) {
-	 unsigned  nv  = n_poly_vert[pi];
+    rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
+    //~ printf(" DST : %f %f %f\n", dst_c.x, dst_c.y, dst_c.z);
+	t1 = 1e18;
 
-     for(vi = 0;  vi < nv; vi += 1) {
-      pt2d   pt = v_poly_vert[tvi + vi];
-      double d	= distance({x,y}, pt);
+	for(unsigned pi = 0; pi < np; pi += 1) { /* polygons */
+     for(unsigned ei = vi + npv[pi];  vi < ei; vi += 1) { /* vertices */
+      v0 = vertices[vi];
+      v1 = vertices[(vi + 1) % ei];
+      d  = distance(p, v0);
 
-	  if(d < 0.001)
-      printf(" ! P = {%u, %u}, PX = {%f, %f}, V = {%f, %f}, d = %f\n", pix_x, pix_y, x, y, pt.x, pt.y, d);
-
-      if(d < R) {
-       aux_raster_putpix(pix_x, pix_y, COLOR, pbf);
-      }
+      /* minimum distance to *all* polygon segments */
+       t0 = d;
+       d  = dist_segment(p, v0, v1);
+       t1 = std::min(t1, d);
      }
-     tvi += vi;
     }
+
+    if(t1 > lim) { /* squared distance out of range */
+     goto l_end_pixel;
+    }
+    if(t1 > th) { /* some blur */
+     double b = smoothstep(th, lim, t1);
+     t1 = std::lerp(0., 1., b);
+	 printf(" ! %f\n", b);
+    }
+
+    fout_c = vec4d(1.0, mix(c_c, dst_c, t1));
+    //~ fout_c = vec4d(1.0, mix(vec3d{1.0, 1.0, 1.0}, {0,0,0}, 1.0));
+
+l_put_pixel:
+    aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
+    //~ printf(" ! %f %f %f %f\n", fout_c.x, fout_c.y, fout_c.z, fout_c.w);
+    //~ printf(" ! %x\n", ui_argb(fout_c));
+    //~ aux_raster_putpix(pix_x, pix_y, 0x00FF0000, pbf);
+l_end_pixel: ;
    }
   }
   

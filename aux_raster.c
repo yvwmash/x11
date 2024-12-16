@@ -6,6 +6,7 @@
 
 #include "aux_raster.h"
 
+/* */
 int aux_raster_putpix(int              x,
                       int              y, 
                       uint32_t         color, 
@@ -25,6 +26,26 @@ int aux_raster_putpix(int              x,
 
  return 0;
 }
+
+/* */
+uint32_t aux_raster_getpix(int              x,
+                           int              y,
+                           aux_raster_buf  *pixels)
+{
+ uint32_t *p = (uint32_t*)pixels->buf;
+
+#if AUX_RASTER_INVERT_Y_AXIS == 1
+ y = pixels->h - y;
+#endif
+
+  x = (x < pixels->w)? x : pixels->w - 1;
+  y = (y < pixels->h)? y : pixels->h - 1;
+
+  p += y * pixels->w + x;
+
+ return *p;
+}
+
 
 /* */
 int aux_raster_line(int              x0,

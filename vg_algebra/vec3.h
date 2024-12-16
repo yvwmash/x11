@@ -15,6 +15,9 @@ struct vec3 {
  vec3() {};
  vec3(I x, I y, I z) : x(x), y(y), z(z) {};
 
+ /* explicit copy assignment operator */
+ vec3& operator = (const vec3& r) = default;
+
  /* convienience constructors */
  vec3(const vec2<I> &v, I z) : x(v.x), y(v.y), z(z)   {};
  vec3(I x, const vec2<I> &v) : x(x),   y(v.x), z(v.y) {};

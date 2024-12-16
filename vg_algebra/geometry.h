@@ -82,7 +82,7 @@ int intersect_seg(const segment<I>& s1, const segment<I>& s2, pt2<I>& pi) {
 
 /* =========================================================================================== */
 template <typename I>
-int polygon_winding(pt2<I> *va, int n){
+int polygon_winding(pt2<I> *va, int n) {
  pt2<I>  *s = NULL; 
  pt2<I>  *v = NULL;
  pt2<I>  *bv, *ev;

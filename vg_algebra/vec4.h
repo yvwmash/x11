@@ -28,6 +28,9 @@ struct vec4 {
  vec4(const vec2<I>& v, I x, I y)           : x(v.x), y(v.y), z(x),   w(y)   {}
  vec4(const vec2<I>& l, const vec2<I>& r)   : x(l.x), y(l.y), z(r.x), w(r.y) {}
 
+ /* explicit copy assignment operator */
+ vec4& operator = (const vec4& r) = default;
+
  /* scalar */
  const vec4<I>& operator *= (I s);
 
