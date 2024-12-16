@@ -351,10 +351,6 @@ int main(int argc, char *argv[])
 
  /* display polygon vertices */
  {
-  pt2d     *vertices = v_poly_vert;
-  unsigned  np       = n_poly;
-  unsigned *npv      = n_poly_vert;
-
   #define COLOR 0xFF0000FF
 
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
@@ -382,8 +378,6 @@ int main(int argc, char *argv[])
     return distance(p, v + t * r);
   };
 
-#pragma GCC diagnostic pop
-
   /* return minimum distance between line segment vw and point p */
   auto sq_dist_segment = [&](pt2d p, pt2d v, pt2d w) -> double {
    vec2d  r  = w - v;
@@ -401,11 +395,17 @@ int main(int argc, char *argv[])
    return r.x*r.x + r.y*r.y; /* squared distance */
   };
 
+#pragma GCC diagnostic pop
+
   assert(xcb_ctx.img_raster_buf.bpp == 32);
   assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
   assert(xcb_ctx.img_raster_buf.stride % (xcb_ctx.img_raster_buf.bpp / CHAR_BIT) == 0);
   assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
   assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
+
+  pt2d     *vertices = v_poly_vert;
+  unsigned  np       = n_poly;
+  unsigned *npv      = n_poly_vert;
 
   double  t0 = 0.0, t1 = 0.0;
   double  th     = 3.0 * U;   /* thickness */
@@ -448,10 +448,10 @@ int main(int argc, char *argv[])
     //~ printf(" DST : %f %f %f\n", dst_c.x, dst_c.y, dst_c.z);
 	t1 = 1e18;
 
-	for(unsigned pi = 0; pi < np; pi += 1) { /* polygons */
-     for(unsigned ei = vi + npv[pi];  vi < ei; vi += 1) { /* vertices */
-      v0 = vertices[vi];
-      v1 = vertices[(vi + 1) % ei];
+	for(unsigned pi = 0; pi < np; pi += 1, vi += 1) { /* polygons */
+     for(unsigned ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
+      v0 = vertices[vi    ];
+      v1 = vertices[vi + 1];
       d  = distance(p, v0);
 
       /* minimum distance to *all* polygon segments */
@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
     if(t1 > th) { /* some blur */
      double b = smoothstep(th, lim, t1);
      t1 = std::lerp(0., 1., b);
-	 printf(" ! %f\n", b);
+	 //~ printf(" ! %f\n", b);
     }
 
     fout_c = vec4d(1.0, mix(c_c, dst_c, t1));
