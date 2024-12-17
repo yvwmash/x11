@@ -572,6 +572,7 @@ main_terminate:
  }
  if(dri_fd > 0) {
   close(dri_fd);
+  aux_drm_destroy_ctx(&drm_ctx);
  }
  if(sig_fd != -1){
   close(sig_fd);

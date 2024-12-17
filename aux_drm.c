@@ -201,7 +201,24 @@ void  aux_drm_destroy_ctx(aux_drm_ctx *ctx)
   return;
  }
 
- 
+ free(ctx->vcon);
+ free(ctx->venc);
+ free(ctx->vcrtc);
+ free((void*)ctx->vqq);
+ free(ctx->vpln);
+ free(ctx->vfb);
+ free(ctx->vdpms);
+ ctx->vcon  = NULL;
+ ctx->venc  = NULL;
+ ctx->vcrtc = NULL;
+ ctx->vqq   = NULL;
+ ctx->vpln  = NULL;
+ ctx->vfb   = NULL;
+ ctx->vdpms = NULL;
+
+ aux_drm_zero_ctx(ctx);
+
+ fprintf(stderr, " ! aux-drm: disconnect\n");
 }
 
 /* */
