@@ -357,13 +357,13 @@ int main(int argc, char *argv[])
   unsigned  bf_h = xcb_ctx.img_raster_buf.h;
   auto     *pbf  = &xcb_ctx.img_raster_buf;
   double    U    = 2.0 / std::min(bf_w, bf_h);
-  double    R    = 25.0 * U;
+  double    R    = 7.0 * U;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
   /* return minimum distance between line segment vw and point p */
-  auto dist_segment = [&](pt2d p, pt2d v, pt2d w) -> double {
+  auto dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
     vec2d  r  = w - v;
     double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
 
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
   };
 
   /* return minimum distance between line segment vw and point p */
-  auto sq_dist_segment = [&](pt2d p, pt2d v, pt2d w) -> double {
+  auto sq_dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
    vec2d  r  = w - v;
    double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
 
@@ -393,6 +393,10 @@ int main(int argc, char *argv[])
    v = v + t * r;  /* projection falls on the segment */
    r = v - p;
    return r.x*r.x + r.y*r.y; /* squared distance */
+  };
+
+  auto distance_sq = [](auto &l, auto &r) -> double {
+    return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
   };
 
 #pragma GCC diagnostic pop
@@ -413,6 +417,7 @@ int main(int argc, char *argv[])
   double  bl     = 1.0 * U;   /* blend distance */
   double  lim    = th + bl;   /* limit to test distance function for the line */
   double  lim_2  = lim * lim; /* limit squared */
+  double  r_2    = R * R;     /* vertex circle radius squared */
   /* colors */
   vec3d   c_v    = vec3d(0.0, 0.0, 1.0); /* RGB */
   vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB */
@@ -443,7 +448,7 @@ int main(int argc, char *argv[])
     pt2d      p   = {x,y};
     pt2d      v0, v1;
     unsigned  vi = 0;
-    double d;
+    double d2;
 
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 	t = 1e18;
@@ -452,28 +457,28 @@ int main(int argc, char *argv[])
      for(unsigned ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
       v0 = vertices[vi    ];
       v1 = vertices[vi + 1];
-      d  = distance(p, v0);
+      d2 = distance_sq(p, v0);
 
-      if(d < R) { /* its a vertex pixel */
+      if(d2 < r_2) { /* its a vertex pixel */
        src_c = c_v;
        t     = 1.0; /* pure color */
        goto l_mix_colour;
       }
 
       /* minimum distance to *all* polygon segments */
-       d  = dist_segment(p, v0, v1);
-       t  = std::min(t, d);
+       d2 = sq_dist_segment(p, v0, v1);
+       t  = std::min(t, d2);
      }
     }
 
-    if(t > lim) { /* squared distance out of range */
+    if(t > lim_2) { /* squared distance out of range */
      goto l_end_pixel;
     }
 
     src_c = c_c;
 
-    if(t > th) { /* some blend near the edges of the line */
-     t = smoothstep(th, lim, t);
+    if(t > th_2) { /* some blend near the edges of the line */
+     t = smoothstep(th_2, lim_2, t);
      /* blend with dst color. pixels that are further from line center receive less blend factor */
      t = std::lerp(1., 0., t);
     } else {
