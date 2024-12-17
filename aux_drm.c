@@ -265,7 +265,7 @@ end_do_con:
 }
 
 static bool do_enc(aux_drm_ctx *ctx, drmModeRes const * const vres) {
- bool                 ret      = true;   
+ bool                 ret      = true;
  int                  fd       = ctx->fd;
  drmModeEncoder      *encoder;
 

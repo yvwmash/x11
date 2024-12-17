@@ -439,7 +439,6 @@ int main(int argc, char *argv[])
   printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
   out_c.x = 1.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
-  //~ exit(0);
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
@@ -448,7 +447,7 @@ int main(int argc, char *argv[])
     pt2d      p   = {x,y};
     pt2d      v0, v1;
     unsigned  vi = 0;
-    double d2;
+    double    d2;
 
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 	t = 1e18;
