@@ -117,15 +117,15 @@ static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_
  for (unsigned pi = 0; pi < *n_p; ++pi) {
   struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
   unsigned            n;
- 
+
   if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
    fprintf(stderr, " * invalid polygon format at index %u\n", pi);
    continue;
   }
- 
+
   n          = json_object_array_length(a_poly);
   (*n_v)[pi] = n;
- 
+
   /* polygon contour */
   for (unsigned ci = 0; ci < n; ++ci, ++tv) {
    struct json_object *pt = json_object_array_get_idx(a_poly, ci);
@@ -154,7 +154,7 @@ l_end_read_contours:
  if(NULL != parsed_json) {
   json_object_put(parsed_json);
  }
- 
+
  return status;
 }
 
@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
 #define WIN_W 1024
 #define WIN_H 1024
 
- /* create shared memory that will be used later 
-    as a raster buffer of the window. 
+ /* create shared memory that will be used later
+    as a raster buffer of the window.
  */
  {
   int mem_fd = -1;
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
   unsigned vi;
   for(unsigned pi = 0; pi < n_poly; ++pi) {
    unsigned n = n_poly_vert[pi];
- 
+
    printf("poly: %u\n", pi);
    for(vi = 0; vi < n; ++vi) {
     printf("\tv[%u]: %f, %f\n", vi, v_poly_vert[i + vi].x, v_poly_vert[i + vi].y);
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
   unsigned  bf_h = xcb_ctx.img_raster_buf.h;
   auto     *pbf  = &xcb_ctx.img_raster_buf;
   double    U    = 2.0 / std::min(bf_w, bf_h);
-  double    R    = 30.0 * U;
+  double    R    = 25.0 * U;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -407,16 +407,17 @@ int main(int argc, char *argv[])
   unsigned  np       = n_poly;
   unsigned *npv      = n_poly_vert;
 
-  double  t0 = 0.0, t1 = 0.0;
+  double  t      = 0.0;
   double  th     = 3.0 * U;   /* thickness */
   double  th_2   = th * th;   /* thinckness squared */
-  double  bl     = 1.0 * U;         /* blur */
-  double  lim    = th + bl;   /* limit to test distance function for */
+  double  bl     = 1.0 * U;   /* blend distance */
+  double  lim    = th + bl;   /* limit to test distance function for the line */
   double  lim_2  = lim * lim; /* limit squared */
   /* colors */
-  vec3d   c_v    = vec3d(0.0, 1.0, 0.0); /* RGB */
+  vec3d   c_v    = vec3d(0.0, 0.0, 1.0); /* RGB */
   vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB */
   vec3d   dst_c;
+  vec3d   src_c;
   vec4d   fout_c;
 
   printf(" ! U   : %f\n", U);
@@ -445,8 +446,7 @@ int main(int argc, char *argv[])
     double d;
 
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
-    //~ printf(" DST : %f %f %f\n", dst_c.x, dst_c.y, dst_c.z);
-	t1 = 1e18;
+	t = 1e18;
 
 	for(unsigned pi = 0; pi < np; pi += 1, vi += 1) { /* polygons */
      for(unsigned ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
@@ -454,39 +454,45 @@ int main(int argc, char *argv[])
       v1 = vertices[vi + 1];
       d  = distance(p, v0);
 
+      if(d < R) { /* its a vertex pixel */
+       src_c = c_v;
+       t     = 1.0; /* pure color */
+       goto l_mix_colour;
+      }
+
       /* minimum distance to *all* polygon segments */
-       t0 = d;
        d  = dist_segment(p, v0, v1);
-       t1 = std::min(t1, d);
+       t  = std::min(t, d);
      }
     }
 
-    if(t1 > lim) { /* squared distance out of range */
+    if(t > lim) { /* squared distance out of range */
      goto l_end_pixel;
     }
-    if(t1 > th) { /* some blur */
-     double b = smoothstep(th, lim, t1);
-     t1 = std::lerp(0., 1., b);
-	 //~ printf(" ! %f\n", b);
+
+    src_c = c_c;
+
+    if(t > th) { /* some blend near the edges of the line */
+     t = smoothstep(th, lim, t);
+     /* blend with dst color. pixels that are further from line center receive less blend factor */
+     t = std::lerp(1., 0., t);
+    } else {
+     t = 1.0; /* pure color */
     }
 
-    fout_c = vec4d(1.0, mix(c_c, dst_c, t1));
-    //~ fout_c = vec4d(1.0, mix(vec3d{1.0, 1.0, 1.0}, {0,0,0}, 1.0));
-
-l_put_pixel:
+l_mix_colour:
+    fout_c = vec4d(1.0, mix(dst_c, src_c, t));
     aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
-    //~ printf(" ! %f %f %f %f\n", fout_c.x, fout_c.y, fout_c.z, fout_c.w);
-    //~ printf(" ! %x\n", ui_argb(fout_c));
-    //~ aux_raster_putpix(pix_x, pix_y, 0x00FF0000, pbf);
+
 l_end_pixel: ;
    }
   }
-  
+
  }
 
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
- while(1){
+ while(1) {
   int  n, i, fd;
 
   n = epoll_pwait (ep_fd, ep_evs, MAXEVENTS, -1, &mask_sigs); /* wait, signal safe */
@@ -534,7 +540,7 @@ l_end_pixel: ;
     }while(status == (4 * sizeof(struct aux_drm_event_crtc_sq)));
    }
   } /* finish service epoll events */
-  
+
   if(f_win_close){ /* window closed by input */
    goto main_terminate;
   }
