@@ -7,8 +7,8 @@ CXX      = c++
 AR       = ar
 PFLAGS   = -D_XOPEN_SOURCE=700 -D_GNU_SOURCE
 SFLAGS   = -fsanitize=address,leak,signed-integer-overflow,bounds,bounds-strict,float-cast-overflow,pointer-overflow
-CFLAGS   = -std=c2x -Wall -Wpedantic -Wextra -Wmissing-prototypes -Wmissing-declarations -O0 -ggdb3 -fpic $(SFLAGS)
-CXXFLAGS = -std=c++23 -Wall -Wpedantic -Wextra -Wmissing-declarations -O0 -ggdb3 -fpic $(SFLAGS)
+CFLAGS   = -std=c2x -Wall -Wpedantic -Wextra -Wmissing-prototypes -Wmissing-declarations -O0 -ggdb3 -fpic -fopenmp $(SFLAGS)
+CXXFLAGS = -std=c++23 -Wall -Wpedantic -Wextra -Wmissing-declarations -O0 -ggdb3 -fpic -fopenmp $(SFLAGS)
 CFLAGS_DRM     = $(shell pkg-config --cflags libdrm)
 CFLAGS_EGL     = $(shell pkg-config --cflags egl glu json-c)
 CFLAGS_GL      = $(shell pkg-config --cflags gl glu)

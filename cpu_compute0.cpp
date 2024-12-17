@@ -24,6 +24,8 @@ extern "C" {
 #include "aux_gl.h"
 }
 
+#include <omp.h>
+
 #include "vg_algebra/geometry.h"
 
 extern "C" {
@@ -437,9 +439,11 @@ int main(int argc, char *argv[])
   printf(" MIX : %f\n", vec.x);
   vec4d out_c = vec4d(mix(vec3d{1.0, 1.0, 1.0}, {0,0,0}, 1.0), 1.0);
   printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
-  out_c.x = 1.0;
+  out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
+  //~ exit(0);
 
+  #pragma omp parallel for collapse(2)
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
@@ -487,7 +491,6 @@ int main(int argc, char *argv[])
 l_mix_colour:
     fout_c = vec4d(1.0, mix(dst_c, src_c, t));
     aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
-
 l_end_pixel: ;
    }
   }

@@ -664,11 +664,11 @@ int aux_xcb_disconnect(aux_xcb_ctx *ctx)
  /* destroy window, if any */
  aux_xcb_destroy_window(ctx);
 
- /* free X11 connection */
- /* SO: Do I need to disconnect an xcb_connection_t that I got from XGetXCBConnection?
- /* 	https://stackoverflow.com/questions/11059756/do-i-need-to-disconnect-an-xcb-connection-t-that-i-got-from-xgetxcbconnection
- /*		XCloseDisplay explicitly calls xcb_disconnect
- /*     	https://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ClDisplay.c
+ /* free X11 connection
+  * SO: Do I need to disconnect an xcb_connection_t that I got from XGetXCBConnection?
+  * 	https://stackoverflow.com/questions/11059756/do-i-need-to-disconnect-an-xcb-connection-t-that-i-got-from-xgetxcbconnection
+  *		XCloseDisplay explicitly calls xcb_disconnect
+  *     	https://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ClDisplay.c
  */
  if(ctx->x11_dpy) {
   XCloseDisplay(ctx->x11_dpy);
