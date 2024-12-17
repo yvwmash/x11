@@ -236,15 +236,7 @@ static bool do_con(aux_drm_ctx *ctx, drmModeRes const * const vres) {
    goto end_do_con;
   }
   *((drmModeConnector*)ctx->vcon + i) = *connector;
-  drmModeFreeConnector(connector);
- }
 
-end_do_con:
- for(unsigned i = 0; i < ctx->n_con; ++i) {
-  connector = (drmModeConnector*)ctx->vcon + i;
-  if(DRM_MODE_DISCONNECTED == connector->connection) {
-   continue;
-  }
   /* check DPMS status */
   dpms_prop  = NULL;
   dpms_value = 0;
@@ -254,13 +246,16 @@ end_do_con:
    	continue;
    }
    if (strcmp(dpms_prop->name, "DPMS") == 0) {
-   	dpms_value = connector->prop_values[i];
+    dpms_value = connector->prop_values[ci];
    }
    drmModeFreeProperty(dpms_prop);
   }
   ctx->vdpms[i] = dpms_value; /* on by default */
+
+  drmModeFreeConnector(connector);
  }
 
+end_do_con:
  return ret;
 }
 
