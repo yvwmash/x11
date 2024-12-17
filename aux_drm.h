@@ -62,7 +62,7 @@ typedef struct aux_drm_ctx {
  unsigned        n_con, n_enc, n_crtc, n_pln, n_fb;
  void           *venc, *vcon, *vcrtc, *vpln, *vfb;
  unsigned       *vdpms;
- volatile  bool *vqq;
+ volatile  bool *vqq; /* NB: what was a reason to add vqq? what is it for?  */
 }aux_drm_ctx;
 /* *********************************************************************************** */
 
@@ -70,6 +70,7 @@ typedef struct aux_drm_ctx {
 int   aux_drm_open_fd(const char *nm, aux_drm_ctx *ctx);
 void  aux_drm_zero_ctx(aux_drm_ctx *ctx);
 bool  aux_drm_init_ctx(aux_drm_ctx *ctx);
+void  aux_drm_destroy_ctx(aux_drm_ctx *ctx);
 
 bool aux_drm_is_crtc_active_idx(aux_drm_ctx *ctx, unsigned idx);
 bool aux_drm_is_crtc_active_id (aux_drm_ctx *ctx, unsigned id);

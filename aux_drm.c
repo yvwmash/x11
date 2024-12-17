@@ -194,6 +194,17 @@ end_alloc_mem:
  return ret;
 }
 
+/* */
+void  aux_drm_destroy_ctx(aux_drm_ctx *ctx)
+{
+ if(NULL == ctx) {
+  return;
+ }
+
+ 
+}
+
+/* */
 static bool do_crtcs(aux_drm_ctx *ctx, drmModeRes const * const vres) {
  bool          ret      = true;   
  int           fd       = ctx->fd;   
