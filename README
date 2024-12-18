@@ -1,2 +1,62 @@
-trim trailing whitespaces from file
+# trim trailing whitespaces from file
 	sed -Ei 's/[ \t]+$//' <file name>
+
+# switch to clang compiler ######################################################################################
+# reason:
+#	1* more static analysis switches
+#	2* clang fellas are eager to support new language standards sooner than gcc fellas. potential learning point.
+
+# update alternatives(update symlinks to compiler)
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-15 200 # higher number prefered
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-15 200
+
+# update alternatives LLVM
+sudo update-alternatives --install \
+        /usr/bin/llvm-config       llvm-config      /usr/bin/llvm-config-15  200 \
+--slave /usr/bin/llvm-ar           llvm-ar          /usr/bin/llvm-ar-15 \
+--slave /usr/bin/llvm-as           llvm-as          /usr/bin/llvm-as-15 \
+--slave /usr/bin/llvm-bcanalyzer   llvm-bcanalyzer  /usr/bin/llvm-bcanalyzer-15 \
+--slave /usr/bin/llvm-cov          llvm-cov         /usr/bin/llvm-cov-15 \
+--slave /usr/bin/llvm-diff         llvm-diff        /usr/bin/llvm-diff-15 \
+--slave /usr/bin/llvm-dis          llvm-dis         /usr/bin/llvm-dis-15 \
+--slave /usr/bin/llvm-dwarfdump    llvm-dwarfdump   /usr/bin/llvm-dwarfdump-15 \
+--slave /usr/bin/llvm-extract      llvm-extract     /usr/bin/llvm-extract-15 \
+--slave /usr/bin/llvm-link         llvm-link        /usr/bin/llvm-link-15 \
+--slave /usr/bin/llvm-mc           llvm-mc          /usr/bin/llvm-mc-15 \
+--slave /usr/bin/llvm-mcmarkup     llvm-mcmarkup    /usr/bin/llvm-mcmarkup-15 \
+--slave /usr/bin/llvm-nm           llvm-nm          /usr/bin/llvm-nm-15 \
+--slave /usr/bin/llvm-objdump      llvm-objdump     /usr/bin/llvm-objdump-15 \
+--slave /usr/bin/llvm-ranlib       llvm-ranlib      /usr/bin/llvm-ranlib-15 \
+--slave /usr/bin/llvm-readobj      llvm-readobj     /usr/bin/llvm-readobj-15 \
+--slave /usr/bin/llvm-rtdyld       llvm-rtdyld      /usr/bin/llvm-rtdyld-15 \
+--slave /usr/bin/llvm-size         llvm-size        /usr/bin/llvm-size-15 \
+--slave /usr/bin/llvm-stress       llvm-stress      /usr/bin/llvm-stress-15 \
+--slave /usr/bin/llvm-symbolizer   llvm-symbolizer  /usr/bin/llvm-symbolizer-15 \
+--slave /usr/bin/llvm-tblgen       llvm-tblgen      /usr/bin/llvm-tblgen-15 \
+
+# install LLVM C++ standard library
+sudo apt install libc++-15-dev libc++1-15 libc++abi-15-dev libc++abi1-15
+
+# creat softlink to LLVM linker. for some reason Debian does not do this.
+sudo ln -s /usr/lib/llvm-15/bin/lld /usr/bin/lld
+
+# link rights. we trust wheel, aren't we?
+# sudo chown root:wheel /usr/bin/lld # Debian does not have a wheel
+
+# drop sudo, if any
+sudo -k
+
+# chown to root:<current user>
+sh -c 'GROUP=$(id -gn) && sudo chown root:$GROUP /usr/bin/lld'
+
+# install LLVM openMP lib
+sudo apt install libomp-15-dev libomp-15-doc
+
+# update linker cache
+sudo ldconfig
+
+# END switch to clang compiler ###################################################################################
+
+# check https://clang.llvm.org/c_status.html#c2y(C2y implementation status)

@@ -413,7 +413,6 @@ int main(int argc, char *argv[])
   unsigned  np       = n_poly;
   unsigned *npv      = n_poly_vert;
 
-  double  t      = 0.0;
   double  th     = 3.0 * U;   /* thickness */
   double  th_2   = th * th;   /* thinckness squared */
   double  bl     = 1.0 * U;   /* blend distance */
@@ -443,7 +442,7 @@ int main(int argc, char *argv[])
   printf(" UI  : %08x\n", ui_argb(out_c));
   //~ exit(0);
 
-  #pragma omp parallel for collapse(2)
+  #pragma omp parallel num_threads(4)
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
@@ -452,6 +451,7 @@ int main(int argc, char *argv[])
     pt2d      v0, v1;
     unsigned  vi = 0;
     double    d2;
+    double    t;
 
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 	t = 1e18;

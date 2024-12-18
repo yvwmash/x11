@@ -29,7 +29,7 @@ static const char *randr_connection_strings[] = {
 };
 
 static const char *propstatus_strings[] = {
- "NEW", "DELETE", 
+ "NEW", "DELETE",
 };
 
 /* *********************************************************************************** */
@@ -269,8 +269,8 @@ static void on_ev_randr_screen_change(xcb_generic_event_t *event) {
 int aux_xcb_ev_func(aux_xcb_ctx *ctx)
 {
  xcb_generic_event_t   *event;
- uint32_t               kb_key; 
- uint16_t               kb_key_state; 
+ uint32_t               kb_key;
+ uint16_t               kb_key_state;
 
  ctx->has_input = false;
 
@@ -290,7 +290,7 @@ int aux_xcb_ev_func(aux_xcb_ctx *ctx)
    free(event);
    return -1;
   }
-  
+
   /* extension events */
   if(ctx->x11ext_randr) {
    if(etyp == ((unsigned)ctx->x11ext_randr_ev_base + XCB_RANDR_NOTIFY)) { /* XCB_RANDR_NOTIFY */
@@ -447,8 +447,8 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
 }
 
 /* */
-int aux_xcb_connect(aux_xcb_ctx  *ctx, 
-                    const char   *conn_string, 
+int aux_xcb_connect(aux_xcb_ctx  *ctx,
+                    const char   *conn_string,
                     int           screen)
 {
  void                 *x11_dpy;
@@ -754,9 +754,9 @@ int aux_xcb_select_visual(aux_xcb_ctx *ctx, int config[])
          " ! \t red mask          : %.8x\n"
          " ! \t green mask        : %.8x\n"
          " ! \t blue mask         : %.8x\n",
-         i.data->visual_id, 
-         depth, 
-         i.data->_class, 
+         i.data->visual_id,
+         depth,
+         i.data->_class,
          i.data->bits_per_rgb_value,
          r_mask,
          g_mask,
@@ -793,7 +793,7 @@ xcb_vis_i_next:
 }
 
 #define WM_EWMH_CLIENT_SOURCE_TYPE_NONE      0  /** No source at all (for clients supporting an older version of
-                                                    EWMH specification) 
+                                                    EWMH specification)
 											    */
 #define WM_EWMH_CLIENT_SOURCE_TYPE_NORMAL    1  /** Normal application */
 #define WM_EWMH_CLIENT_SOURCE_TYPE_OTHER     2  /** Pagers and other clients that represent direct user actions */
@@ -803,7 +803,7 @@ xcb_vis_i_next:
 #define WM_EWMH_FLAG_MOVERESIZE_HAS_W     (1 << 10)
 #define WM_EWMH_FLAG_MOVERESIZE_HAS_H     (1 << 11)
 
-static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx, 
+static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
                                  xcb_window_t     dst_win,
                                  xcb_atom_t       atom,
                                  uint32_t         data_len,
@@ -823,7 +823,7 @@ static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
 
  assert(data_len <= (5 * sizeof(uint32_t)));
 
- memset(&ev, 0, sizeof(xcb_client_message_event_t)); 
+ memset(&ev, 0, sizeof(xcb_client_message_event_t));
 
  ev.response_type = XCB_CLIENT_MESSAGE;
  ev.window = window;
@@ -848,7 +848,7 @@ static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
  return 0;
 }
 
-static int xcb_request_moveresize_window(aux_xcb_ctx   *ctx, 
+static int xcb_request_moveresize_window(aux_xcb_ctx   *ctx,
                                          xcb_gravity_t  gravity,
                                          int            source_indication_flag,
                                          int            flags,
@@ -1028,7 +1028,7 @@ int aux_xcb_change_prop(aux_xcb_ctx *ctx, uint8_t mode, uint32_t flag, const voi
  cookie = xcb_change_property_checked(c,               /* xcb connection                 */
                                       mode,            /* mode                           */
                                       window,          /* window                         */
-                                      prop,            /* the property to change         */ 
+                                      prop,            /* the property to change         */
                                       type,            /* type of the property           */
                                       format,          /* format(bits)                   */
 									  data_len,        /* number of elements(see format) */
@@ -1045,10 +1045,10 @@ int aux_xcb_change_prop(aux_xcb_ctx *ctx, uint8_t mode, uint32_t flag, const voi
 }
 
 /* */
-int aux_xcb_get_prop(aux_xcb_ctx      *ctx, 
-                     uint32_t          flag, 
-                     const void       *arg, 
-                     unsigned long    *size, 
+int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
+                     uint32_t          flag,
+                     const void       *arg,
+                     unsigned long    *size,
                      void           **data)
 {
  xcb_get_property_cookie_t   cookie;
@@ -1066,7 +1066,7 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
   *data = NULL;
  if(size)
   *size = 0;
- 
+
  switch(flag){
  case AUX_WM_PROP_WIN_TYP: { /* ret data := atom */
    window = *(xcb_window_t*)arg;
@@ -1087,7 +1087,6 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
    break;
   }
 
-
  }
 
  cookie = xcb_get_property(c,                          /* xcb connection */
@@ -1105,7 +1104,7 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
   status = -1;
   goto done_prop_func;
  }
- if(reply->type != type){ /* print type of the request and reply. return error. */
+ if(reply->type != type) { /* print type of the request and reply. return error. */
   xcb_get_atom_name_reply_t  *nm_reply_req;
   xcb_get_atom_name_reply_t  *nm_reply_ret;
   char                       *nm_req;
@@ -1122,8 +1121,8 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
   if(nm_reply_ret){
    nm_ret_len   = xcb_get_atom_name_name_length(nm_reply_ret);
    nm_ret = xcb_get_atom_name_name(nm_reply_ret);
-  }  
-  
+  }
+
   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
   if(nm_req_len)
    fprintf(stderr, " * \taux-xcb: requested atom :%.*s\n", nm_req_len, nm_req);
@@ -1148,7 +1147,7 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
 
  /* null terminate the result to make string handling easier */
  if(data){
-  *data = malloc(prop_size + 1); 
+  *data = malloc(prop_size + 1);
   if(NULL == (*data)){
    fprintf(stderr, " * aux-xcb: %s:%s:%d\nmalloc failed.\n", __FILE__, __func__, __LINE__);
    status = 1;
@@ -1243,9 +1242,9 @@ int aux_xcb_creat_pixmap(aux_xcb_ctx *ctx)
 
 /* returns first key symbol generated from key */
 int aux_xcb_map_keycode(void           *xcb_keysyms,
-                        xcb_keycode_t   code, 
-                        uint16_t        state, 
-						uint32_t       *aux_key, 
+                        xcb_keycode_t   code,
+                        uint16_t        state,
+						uint32_t       *aux_key,
                         uint16_t       *aux_key_state)
 {
  xcb_keysym_t       keysym = XCB_NO_SYMBOL;
@@ -1346,7 +1345,7 @@ int aux_xcb_creat_gc(aux_xcb_ctx *ctx)
 
  status = aux_xcb_free_gc(ctx);
  gc     = xcb_generate_id(c);
- 
+
  /* actual create graphics context */
  {
   //~ uint32_t mask     = XCB_GC_GRAPHICS_EXPOSURES;
@@ -1418,7 +1417,7 @@ int aux_xcb_creat_colormap(aux_xcb_ctx *ctx)
  return status;
 }
 
-int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx, 
+int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
                           int           config[]
                          )
 {
@@ -1500,9 +1499,9 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
   printf(" ! aux-xcb: WM_PROP_WORKAREA: # desktops is [%lu]\n", len);
   for(unsigned i = 0; i < len; ++i, p += 4) {
    printf(" !  aux-xcb: WM_PROP_WORKAREA: desktop[%u]: x:%u, y:%u, w:%u, h:%u\n", i,
-                                                  p[0], 
-                                                  p[1], 
-                                                  p[2], 
+                                                  p[0],
+                                                  p[1],
+                                                  p[2],
                                                   p[3]);
   }
   { /* wm prop: set gravity to center of the window */
@@ -1565,8 +1564,8 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
 }
 
 /* */
-int aux_xcb_get_atom(aux_xcb_ctx  *ctx, 
-                     const char   *name, 
+int aux_xcb_get_atom(aux_xcb_ctx  *ctx,
+                     const char   *name,
                      xcb_atom_t   *atom)
 {
  xcb_intern_atom_cookie_t  cookie;
@@ -1580,8 +1579,8 @@ int aux_xcb_get_atom(aux_xcb_ctx  *ctx,
   free(error);
   return -1;
  }
- 
- *atom = reply->atom; 
+
+ *atom = reply->atom;
  free(reply);
 
  return 0;
@@ -1619,7 +1618,7 @@ static int print_xcb_img_stat(aux_raster_buf *aux_rbuf)
  printf(" ! \tcolor unit         : %s\n", fmt);
  printf(" ! \tshared memory      : %s\n", (aux_rbuf->shm_fd < 0)?"no":"yes");
  printf(" ! \tmemory allocated   : %s\n", (aux_rbuf->buf)?"yes":"no");
- printf("\n"); 
+ printf("\n");
 
  return 0;
 }
@@ -1629,7 +1628,7 @@ static int print_xcb_img_stat(aux_raster_buf *aux_rbuf)
    flags are:  - "header only" image
                - image with malloc'ed data.
 */
-static int creat_xcb_img(aux_xcb_ctx  *ctx, 
+static int creat_xcb_img(aux_xcb_ctx  *ctx,
                          xcb_image_t **img,
                          int           w,
                          int           h,
@@ -1670,7 +1669,7 @@ static int creat_xcb_img(aux_xcb_ctx  *ctx,
 /* create a buffer that is used
    to put a picture on a window.
 */
-int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx, 
+int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
                             int           config[]
                            )
 {
@@ -1777,7 +1776,7 @@ int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
    int          mem_fd  = mem_fd_v;
    void        *p       = NULL;
    struct stat  st;
-   
+
    if(fstat(mem_fd, &st) < 0){
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     return -1;
@@ -1804,7 +1803,7 @@ done_allocate:
  ctx->img_raster_buf.bpp          = xcb_img->bpp;          /* bits per pixel, >= depth         */
  ctx->img_raster_buf.depth        = xcb_img->depth;        /* depth, bits                      */
  ctx->img_raster_buf.xcb_img_fmt  = xcb_img->format;       /* xcb_image_format_t               */
- if(xcb_img->byte_order == XCB_IMAGE_ORDER_MSB_FIRST){     
+ if(xcb_img->byte_order == XCB_IMAGE_ORDER_MSB_FIRST){
   ctx->img_raster_buf.byte_order = AUX_RASTER_COLOR_UNIT32_MSB_FIRST; /* color component byte order     */
   ctx->img_raster_buf.color_unit = AUX_RASTER_COLOR_UNIT32_BGRA;      /* color components in this order */
  }else {
@@ -1814,7 +1813,7 @@ done_allocate:
  ctx->img_raster_buf.buf          = xcb_img->data; /* actual pointer to memory */
 
  /* print image stat */
- print_xcb_img_stat(&ctx->img_raster_buf); 
+ print_xcb_img_stat(&ctx->img_raster_buf);
 
  /* free intermediate */
  free(xcb_img);
@@ -1825,7 +1824,7 @@ done_allocate:
 /* send image(front buffer) to X server. */
 int aux_xcb_flush_front_buf(aux_xcb_ctx *ctx)
 {
- xcb_void_cookie_t     cookie; 
+ xcb_void_cookie_t     cookie;
  xcb_generic_error_t  *error;
  xcb_connection_t     *c = ctx->conn;
  aux_raster_buf       *i = &ctx->img_raster_buf;
@@ -1860,7 +1859,7 @@ int aux_xcb_destroy_front_buf(aux_xcb_ctx  *ctx)
  aux_raster_buf  *fb =  &ctx->img_raster_buf;
 
  /* destroy front buffer */
- if(fb->shm_fd != -1){ /* has memory backed file descriptor */  
+ if(fb->shm_fd != -1){ /* has memory backed file descriptor */
   if(fb->buf)
    munmap(fb->buf, fb->size);
   close(fb->shm_fd);
