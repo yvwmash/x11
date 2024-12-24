@@ -1,7 +1,7 @@
 CC     = clang
 CXX    = clang++
 AR     = ar
-PFLAGS       = -D_XOPEN_SOURCE=700 -D_GNU_SOURCE
+PFLAGS       = -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=202406L
 SFLAGS       = -fsanitize=leak,signed-integer-overflow,bounds,float-cast-overflow,pointer-overflow,undefined
 CFLAGS_WARN    = -Weverything
 CXXFLAGS_WARN  = -Weverything
@@ -21,19 +21,19 @@ CFLAGS_CPU0    = $(shell pkg-config --cflags json-c)
 BUILD    = DEBUG
 SANITIZE = ADDRESS
 # sanitize flags {address, thread} are incompatible for clang within same module
-ifeq ($(SANITIZE), ADDRESS)
+.if $(SANITIZE) == ADDRESS
     SFLAGS   += -fsanitize=address
-else
+.else
     SFLAGS   += -fsanitize=thread
-endif
+.endif
 # flags based on build type
-ifeq ($(BUILD), DEBUG)
+.if $(BUILD) == DEBUG
     CFLAGS   += $(CFLAGS_DBG)
     CXXFLAGS += $(CXXFLAGS_DBG)
-else
+.else
     CFLAGS   += $(CFLAGS_REL)
     CXXFLAGS += $(CXXFLAGS_REL)
-endif
+.endif
 
 INC_H = aux_xcb_keymap.h\
         aux_xcb.h\
@@ -61,7 +61,8 @@ EGL_PROB = prob_egl
 OPENCV_IMG2POLY = img2poly
 CPU_COMPUTE0    = cpu_compute0
 
-INC     = -I./include $(shell pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image libdrm)
+INC  !=  pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image
+
 LIBS_DY_XCB = -Wl,-Bdynamic $(shell pkg-config --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr)
 LIBS_DY_DRM = -Wl,-Bdynamic $(shell pkg-config --libs  libdrm)
 LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu)
@@ -107,6 +108,7 @@ mk_dirs: FORCE
 	@mkdir -p out
 
 # binaries
+# link step
 bin/prob_xcb: $(OBJ_XCB) ./build/prob_xcb.o
 	$(CC) -fuse-ld=lld $(PFLAGS) $(INC) ./build/prob_xcb.o $(OBJ_XCB) -o ./bin/prob_xcb $(CFLAGS) $(LIBS_DY_XCB)
 
@@ -122,38 +124,39 @@ bin/img2poly: $(OBJ_OPENCV) $(OBJ_VG)
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
 	$(CXX) -fuse-ld=lld $(PFLAGS) $(INC) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(CXXFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
-# object files
-build/prob_xcb.o: prob_xcb.c $(DEPS)
+# object files, "main" files
+./build/prob_xcb.o: prob_xcb.c $(DEPS)
 	$(CC) $(PFLAGS) $(INC) -c prob_xcb.c -o ./build/prob_xcb.o  $(CFLAGS)
 
-build/prob_xcb_dri.o: prob_xcb_dri.c $(DEPS)
+./build/prob_xcb_dri.o: prob_xcb_dri.c $(DEPS)
 	$(CC) $(PFLAGS) $(INC) -c prob_xcb_dri.c -o ./build/prob_xcb_dri.o  $(CFLAGS_DRM) $(CFLAGS)
 
-build/prob_egl.o: prob_egl.cpp $(OBJ_EGL) $(DEPS)
+./build/prob_egl.o: prob_egl.cpp $(OBJ_EGL) $(DEPS)
 	$(CXX) $(PFLAGS) $(INC) -c prob_egl.cpp -o ./build/prob_egl.o  $(CFLAGS_DRM) $(CXXFLAGS) $(CFLAGS_EGL) $(CFLAGS_GL)
-
-build/aux_xcb.o: aux_xcb.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_xcb.c -o ./build/aux_xcb.o  $(CFLAGS)
-
-build/aux_drm.o: aux_drm.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_drm.c -o ./build/aux_drm.o  $(CFLAGS)
-
-build/aux_raster.o: aux_raster.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_raster.c -o ./build/aux_raster.o  $(CFLAGS)
-
-build/aux_egl.o: aux_egl.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_egl.c -o ./build/aux_egl.o  $(CFLAGS) $(CFLAGS_EGL)
-
-build/fequals.o: vg_algebra/fequals.cpp $(DEPS)
-	$(CXX) $(PFLAGS) $(INC) -c vg_algebra/fequals.cpp -o ./build/fequals.o  $(CXXFLAGS) $(CFLAGS_EGL)
-
-build/aux_gl.o: aux_gl.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_gl.c -o ./build/aux_gl.o  $(CFLAGS) $(CFLAGS_GL)
 
 ./build/opencv_image2poly.o: opencv_image2poly.cpp
 	$(CXX) $(PFLAGS) $(INC) -c opencv_image2poly.cpp -o ./build/opencv_image2poly.o  $(CXXFLAGS) $(CFLAGS_OPENCV)
 
-build/cpu_compute0.o: cpu_compute0.cpp $(DEPS)
+./build/cpu_compute0.o: cpu_compute0.cpp $(DEPS)
 	$(CXX) $(PFLAGS) $(INC) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CFLAGS_CPU0) $(CXXFLAGS)
+
+# object files, supplementary
+./build/aux_xcb.o: aux_xcb.c $(DEPS)
+	$(CC) $(PFLAGS) $(INC) -c aux_xcb.c -o ./build/aux_xcb.o  $(CFLAGS)
+
+./build/aux_drm.o: aux_drm.c $(DEPS)
+	$(CC) $(PFLAGS) $(INC) -c aux_drm.c -o ./build/aux_drm.o  $(CFLAGS)
+
+./build/aux_raster.o: aux_raster.c $(DEPS)
+	$(CC) $(PFLAGS) $(INC) -c aux_raster.c -o ./build/aux_raster.o  $(CFLAGS)
+
+./build/aux_egl.o: aux_egl.c $(DEPS)
+	$(CC) $(PFLAGS) $(INC) -c aux_egl.c -o ./build/aux_egl.o  $(CFLAGS) $(CFLAGS_EGL)
+
+./build/fequals.o: vg_algebra/fequals.cpp $(DEPS)
+	$(CXX) $(PFLAGS) $(INC) -c vg_algebra/fequals.cpp -o ./build/fequals.o  $(CXXFLAGS) $(CFLAGS_EGL)
+
+./build/aux_gl.o: aux_gl.c $(DEPS)
+	$(CC) $(PFLAGS) $(INC) -c aux_gl.c -o ./build/aux_gl.o  $(CFLAGS) $(CFLAGS_GL)
 
 FORCE:
