@@ -3,7 +3,7 @@
 
 # switch to clang compiler ######################################################################################
 # reason:
-#	1* more static analysis switches
+#	1* more static analysis switches(still compete with gcc)
 #	2* clang fellas are eager to support new language standards sooner than gcc fellas. potential learning point.
 
 # update alternatives(update symlinks to compiler)

@@ -1,0 +1,10 @@
+config files used for new system install
+
+1* scite
+	 scite configs and color schemas
+
+2* .bashrc
+	 bash shell config
+
+3* nanorc
+	 nanorc color schema and keybindings
