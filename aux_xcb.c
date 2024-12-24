@@ -1021,7 +1021,6 @@ int aux_xcb_change_prop(aux_xcb_ctx *ctx, uint8_t mode, uint32_t flag, const voi
  default: {
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
    return -1;
-   break;
   }
  }
 
