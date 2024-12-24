@@ -792,6 +792,9 @@ xcb_vis_i_next:
  return -1;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-macros"
+
 #define WM_EWMH_CLIENT_SOURCE_TYPE_NONE      0  /** No source at all (for clients supporting an older version of
                                                     EWMH specification)
 											    */
@@ -802,6 +805,8 @@ xcb_vis_i_next:
 #define WM_EWMH_FLAG_MOVERESIZE_HAS_Y     (1 << 9)
 #define WM_EWMH_FLAG_MOVERESIZE_HAS_W     (1 << 10)
 #define WM_EWMH_FLAG_MOVERESIZE_HAS_H     (1 << 11)
+
+#pragma clang diagnostic pop
 
 static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
                                  xcb_window_t     dst_win,
@@ -938,6 +943,9 @@ done_get_extents:
  return status;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-macros"
+
 #define MAX_PROPERTY_VALUE_LEN 4096
 
 #define WM_ICCCM_SIZE_HINT_US_POSITION     (1 << 0)
@@ -950,6 +958,8 @@ done_get_extents:
 #define WM_ICCCM_SIZE_HINT_P_ASPECT        (1 << 7)
 #define WM_ICCCM_SIZE_HINT_BASE_SIZE       (1 << 8)
 #define WM_ICCCM_SIZE_HINT_P_WIN_GRAVITY   (1 << 9)
+
+#pragma clang diagnostic pop
 
 typedef struct {
 uint32_t  flags;                          /** User specified flags */
