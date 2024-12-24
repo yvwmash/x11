@@ -42,21 +42,21 @@ int main(int argc, char *argv[])
  sigaddset(&mask_sigs, SIGQUIT); /*  to epoll and not to a default signal handler.         */
 
  /* save old sigmask, replace it with new sigmask */
- if(sigprocmask(SIG_BLOCK, &mask_sigs, &mask_osigs) < 0){
+ if(sigprocmask(SIG_BLOCK, &mask_sigs, &mask_osigs) < 0) {
   perror(" * sigprocmask(SIG_BLOCK, &mask_sigs, &mask_osigs)");
   status = 1;
   goto main_terminate;
  }
 
  /* get signal file descriptor */
- if((sig_fd = signalfd(-1, &mask_sigs, 0)) < 0){
+ if((sig_fd = signalfd(-1, &mask_sigs, 0)) < 0) {
   perror(" * signalfd(-1, &mask_sigs, 0)");
   status = 1;
   goto main_terminate;
  }
 
  /* set signal fd as non-blocking */
- if(ioctl(sig_fd, FIONBIO, (char *)&on) < 0){
+ if(ioctl(sig_fd, FIONBIO, (char *)&on) < 0) {
   perror(" * ioctl(sig_fd, FIONBIO)");
   status = 1;
   goto main_terminate;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
  aux_zero_xcb_ctx(&xcb_ctx);
 
  /* connect XCB, create window */
- if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0){
+ if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0) {
   status = 1;
   goto main_terminate;
  }
@@ -77,11 +77,11 @@ int main(int argc, char *argv[])
  {
   int mem_fd = -1;
    mem_fd = memfd_create("_aux_xcb_img_fb", 0);
-   if(mem_fd < 0){
+   if(mem_fd < 0) {
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     return -1;
    }
-   if(ftruncate(mem_fd, 311 * 673 * 4) < 0){
+   if(ftruncate(mem_fd, 311 * 673 * 4) < 0) {
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     close(mem_fd);
     return -1;
@@ -113,22 +113,22 @@ int main(int argc, char *argv[])
  x11_fd = xcb_ctx.fd;
 
  /* set X11 connection fd as non-blocking */
- if(ioctl(x11_fd, FIONBIO, (char *)&on) < 0){
+ if(ioctl(x11_fd, FIONBIO, (char *)&on) < 0) {
   perror(" * ioctl(x11_fd, FIONBIO)");
   status = 1;
   goto main_terminate;
  }
 
- /* create epoll main file descriptor */
- if((kq_fd = kqueue()) < 0){
+ /* create kqueue file descriptor */
+ if((kq_fd = kqueuex(KQUEUE_CLOEXEC)) < 0) {
   perror(" * kqueue()");
   status = 1;
   goto main_terminate;
  }
 
  /* add signal event */
- SET_EV(ep_ev,sig_fd,EPOLLIN);
- if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, sig_fd, &ep_ev) < 0){
+ EV_SET(kq_fd, sig_fd, EPOLLIN);
+ if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, sig_fd, &ep_ev) < 0) {
   perror(" * epoll_ctl sig_fd");
   status = 1;
   goto main_terminate;
@@ -136,14 +136,14 @@ int main(int argc, char *argv[])
 
  /* add X11 event */
  SET_EV(ep_ev,x11_fd,EPOLLIN);
- if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, x11_fd, &ep_ev) < 0){
+ if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, x11_fd, &ep_ev) < 0) {
   perror(" * epoll_ctl x11_fd");
   status = 1;
   goto main_terminate;
  }
 
  /* allocate events for epoll queue */
- if(NULL == (ep_evs = (struct epoll_event*)calloc(MAXEVENTS,sizeof(ep_ev)))){
+ if(NULL == (ep_evs = (struct epoll_event*)calloc(MAXEVENTS,sizeof(ep_ev)))) {
   perror(" * calloc(MAXEVENTS)");
   status = 1;
   goto main_terminate;
@@ -151,44 +151,44 @@ int main(int argc, char *argv[])
 
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
- while(1){
+ while(1) {
   int  n, i, fd;
 
   n = epoll_pwait (ep_fd, ep_evs, MAXEVENTS, -1, &mask_sigs); /* wait, signal safe */
 
-  for(i = 0; i < n; ++i){ // service epoll events
+  for(i = 0; i < n; ++i) { // service epoll events
    fd = ep_evs[i].data.fd;
-   if(fd == sig_fd){ /* signal */
+   if(fd == sig_fd) { /* signal */
     puts("signal arrived");
     status = read(fd, &siginf, sizeof(siginf));
-   if(status != sizeof(siginf)){
+   if(status != sizeof(siginf)) {
     fprintf(stderr,"read != sizeof(siginf)");
     goto main_terminate;
    }
-   if(siginf.ssi_signo == SIGINT){
+   if(siginf.ssi_signo == SIGINT) {
      printf("got SIGINT\n");
      f_exit_sig = true;
-    }else if(siginf.ssi_signo == SIGQUIT){
+    }else if(siginf.ssi_signo == SIGQUIT) {
      printf("got SIGQUIT\n");
      f_exit_sig = true;
      goto main_terminate;
     }else {
      printf("got unregistered signal\n");
     }
-   }else if(fd == x11_fd){ /* x11 event */
+   }else if(fd == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
     f_win_close  = xcb_ctx.f_window_should_close;
     f_win_expose = xcb_ctx.f_window_expose;
    }
   } /* finish service epoll events */
 
-  if(f_win_close){ /* window closed by input */
+  if(f_win_close) { /* window closed by input */
    goto main_terminate;
   }
-  if(f_exit_sig){ /* process needs to stop */
+  if(f_exit_sig) { /* process needs to stop */
    goto main_terminate;
   }
-  if(f_win_expose){ /* window needs update its graphics */
+  if(f_win_expose) { /* window needs update its graphics */
    aux_xcb_flush_front_buf(&xcb_ctx);
   }
 
@@ -196,20 +196,20 @@ int main(int argc, char *argv[])
 
 main_terminate:
 
- if(aux_xcb_disconnect(&xcb_ctx) < 0){
+ if(aux_xcb_disconnect(&xcb_ctx) < 0) {
   status = 1;
  }
- if (sigprocmask(SIG_SETMASK, &mask_osigs, NULL) < 0){
+ if (sigprocmask(SIG_SETMASK, &mask_osigs, NULL) < 0) {
   perror(" * sigprocmask(SIG_SETMASK, &mask_osigs, NULL)");
   status = 1;
  }
- if(sig_fd != -1){
+ if(sig_fd != -1) {
   close(sig_fd);
  }
- if(ep_fd != -1){
+ if(ep_fd != -1) {
   close(ep_fd);
  }
- if(ep_evs){
+ if(ep_evs) {
   free(ep_evs);
  }
 
