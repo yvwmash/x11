@@ -17,19 +17,22 @@ extern "C" {
 #define AUX_RASTER_COLOR_UNIT32_BGRA (1 << 3)
 #define AUX_RASTER_COLOR_UNIT32_BGRX (1 << 4)
 
-typedef struct aux_raster_buf{
+typedef struct aux_raster_buf {
+ void      *buf;          /* points to malloced or mmaped memory            */
+
  uint16_t   w;            /* width in pixels, excluding pads                */
  uint16_t   h;            /* height in pixels                               */
- uint8_t    scanline_pad; /* right pad in bits                              */
  uint32_t   stride;       /* bytes per image row                            */
- uint8_t    bpp;          /* bits per pixel, >= depth                       */
- uint8_t    depth;        /* depth in bits                                  */
  int        xcb_img_fmt;  /* xcb_image_format_t                             */
  uint32_t   byte_order;   /* color component byte order                     */
  uint32_t   color_unit;   /* order of color components in color unit(pixel) */
  uint32_t   size;         /* size of image  data                            */
  int        shm_fd;       /* file descriptor of a shared memory             */
- void      *buf;          /* points to malloced or mmaped memory            */
+ uint8_t    scanline_pad; /* right pad in bits                              */
+ uint8_t    bpp;          /* bits per pixel, >= depth                       */
+ uint8_t    depth;        /* depth in bits                                  */
+
+ uint8_t    pad[1]; /* */
 }aux_raster_buf;
 
 #define AUX__RASTER_INVERT_Y_AXIS 1

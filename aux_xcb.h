@@ -34,26 +34,21 @@ extern "C" {
 
 /* *********************************************************************************** */
 
-typedef struct aux_xcb_ctx{
+typedef struct aux_xcb_ctx {
  void                    *x11_dpy;                 /* */
- bool                     x11ext_present;          /* XPresent */
- uint8_t                  x11ext_present_ev_base, x11ext_present_err_base;
- xcb_present_event_t      x11ext_present_eid;
- bool                     x11ext_randr;            /* XRandR   */
- uint8_t                  x11ext_randr_ev_base, x11ext_randr_err_base;
- bool                     f_eq_changed;            /* */
-
  xcb_connection_t        *conn;                    /* */
- int                      screen_n;                /* */
  const xcb_setup_t       *setup;                   /* */
  xcb_screen_t            *screen;                  /* */
  xcb_depth_t             *depth;                   /* */
  xcb_visualtype_t        *visual;                  /* */
+ xcb_errors_context_t    *err_ctx;                 /* */
+ xcb_key_symbols_t       *kb_syms;                 /* */
+
  xcb_colormap_t           colormap;                /* */
  xcb_window_t             window;                  /* */
  xcb_gcontext_t           gc;                      /* */
  xcb_pixmap_t             pixmap;                  /* */
- aux_raster_buf           img_raster_buf;          /* */
+
  xcb_atom_t               atom_wm_p;               /* WM_PROTOCOLS */
  xcb_atom_t               atom_wm_p_dw;            /* WM_PROTOCOLS => WM_DELETE_WINDOW */
  xcb_atom_t               atom_wm_n_h;             /* XCB_ATOM_WM_NORMAL_HINTS */
@@ -66,13 +61,9 @@ typedef struct aux_xcb_ctx{
  xcb_atom_t               atom_wm_worka_win;       /* WINDOW PROPERTY => _WIN_WORKAREA */
  xcb_atom_t               atom_wm_frame_win;       /* WINDOW PROPERTY => _NET_FRAME_EXTENTS */
  xcb_atom_t               atom_wm_frame_win_msg;   /* WINDOW MESSAGE  => _NET_REQUEST_FRAME_EXTENTS */
- xcb_errors_context_t    *err_ctx;                 /* */
- xcb_key_symbols_t       *kb_syms;                 /* */
 
+ int                      screen_n;                /* */
  int                      fd;                      /* */
-
- volatile bool            f_window_should_close;   /* */
- volatile bool            f_window_expose;         /* */
 
  uint32_t                 color_unit_red_mask; /* */
  uint32_t                 color_unit_gre_mask; /* */
@@ -84,8 +75,24 @@ typedef struct aux_xcb_ctx{
  int                      win_h;  /* */
  int                      pixmap_format; /* */
 
+ aux_raster_buf           img_raster_buf;          /* */
+
+ xcb_present_event_t      x11ext_present_eid;
+
+ bool                     x11ext_present;          /* XPresent */
+ uint8_t                  x11ext_present_ev_base, x11ext_present_err_base;
+ bool                     x11ext_randr;            /* XRandR   */
+ uint8_t                  x11ext_randr_ev_base, x11ext_randr_err_base;
+ bool                     f_eq_changed;            /* */
+
  bool                     has_input;     /* */
+
+ volatile bool            f_window_should_close;   /* */
+ volatile bool            f_window_expose;         /* */
+
  bool                     kb_keys[256];  /* */
+
+ uint8_t                  pad[2]; /* */
 }aux_xcb_ctx;
 
 /* *********************************************************************************** */
