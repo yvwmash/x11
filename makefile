@@ -1,3 +1,7 @@
+# to search for dependencies
+#     (apt search)|(pkg search) <pattern>
+#     example: pkg search xcb-util-*
+
 CC     = clang
 CXX    = clang++
 AR     = ar
