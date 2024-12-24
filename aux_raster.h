@@ -36,8 +36,8 @@ typedef struct aux_raster_buf{
 
 /* */
 int aux_raster_putpix(int              x,
-                      int              y, 
-                      uint32_t         color, 
+                      int              y,
+                      uint32_t         color,
                       aux_raster_buf  *pixels);
 
 /* */
@@ -46,11 +46,11 @@ uint32_t aux_raster_getpix(int              x,
                            aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_line(int              x0, 
-                    int              y0, 
-                    int              x1, 
-                    int              y1, 
-                    uint32_t         color, 
+int aux_raster_line(int              x0,
+                    int              y0,
+                    int              x1,
+                    int              y1,
+                    uint32_t         color,
                     aux_raster_buf  *pixels);
 
 /* */
@@ -74,24 +74,24 @@ int aux_raster_fill_rc(int              x0, int y0,
                        aux_raster_buf  *aux_buf);
 
 /* */
-int aux_raster_circle(int              x, 
-                      int              y, 
+int aux_raster_circle(int              x,
+                      int              y,
                       int              r,
                       uint32_t         color,
 					  aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_ellipse_rc(int              x0, 
-                          int              y0, 
-                          int              x1, 
+int aux_raster_ellipse_rc(int              x0,
+                          int              y0,
+                          int              x1,
                           int              y1,
                           uint32_t         color,
 					      aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_bezier_q(int              x0, 
-                        int              y0, 
-                        int              x1, 
+int aux_raster_bezier_q(int              x0,
+                        int              y0,
+                        int              x1,
                         int              y1,
                         int              x2,
                         int              y2,
@@ -99,9 +99,9 @@ int aux_raster_bezier_q(int              x0,
 					    aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_bezier_c(int              x0, 
-                        int              y0, 
-                        int              x1, 
+int aux_raster_bezier_c(int              x0,
+                        int              y0,
+                        int              x1,
                         int              y1,
                         int              x2,
                         int              y2,
