@@ -6,8 +6,7 @@
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/signalfd.h>
-#include <sys/epoll.h>
+#include <sys/event.h>
 
 #include "aux_xcb.h"
 
@@ -31,7 +30,7 @@ int main(int argc, char *argv[])
  (void)argv;
 
  int                      status = 0, on = 1;
- int                      sig_fd = -1, ep_fd = -1, x11_fd = -1;
+ int                      sig_fd = -1, kq_fd = -1, x11_fd = -1;
  sigset_t                 mask_sigs, mask_osigs;
  struct epoll_event       ep_ev, *ep_evs = NULL;
  struct signalfd_siginfo  siginf;
@@ -71,9 +70,9 @@ int main(int argc, char *argv[])
   status = 1;
   goto main_terminate;
  }
- 
- /* create shared memory that will be used later 
-    as a raster buffer of the window. 
+
+ /* create shared memory that will be used later
+    as a raster buffer of the window.
  */
  {
   int mem_fd = -1;
@@ -121,8 +120,8 @@ int main(int argc, char *argv[])
  }
 
  /* create epoll main file descriptor */
- if((ep_fd = epoll_create(1)) < 0){
-  perror(" * epoll_create");
+ if((kq_fd = kqueue()) < 0){
+  perror(" * kqueue()");
   status = 1;
   goto main_terminate;
  }
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
     f_win_expose = xcb_ctx.f_window_expose;
    }
   } /* finish service epoll events */
-  
+
   if(f_win_close){ /* window closed by input */
    goto main_terminate;
   }

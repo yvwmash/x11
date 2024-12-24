@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+#pragma clang diagnostic ignored "-Wdocumentation"
+
 #include <xcb/xcb.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_errors.h>
@@ -16,6 +20,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xlib-xcb.h>
 #include <X11/Xutil.h>
+
+#pragma clang diagnostic pop
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +73,7 @@ typedef struct aux_xcb_ctx{
 
  volatile bool            f_window_should_close;   /* */
  volatile bool            f_window_expose;         /* */
- 
+
  uint32_t                 color_unit_red_mask; /* */
  uint32_t                 color_unit_gre_mask; /* */
  uint32_t                 color_unit_blu_mask; /* */
@@ -160,8 +166,8 @@ typedef struct aux_xcb_ctx{
 void  aux_zero_xcb_ctx(aux_xcb_ctx *ctx);
 
 /* */
-int   aux_xcb_connect(aux_xcb_ctx  *ctx, 
-                      const char   *conn_string, 
+int   aux_xcb_connect(aux_xcb_ctx  *ctx,
+                      const char   *conn_string,
                       int           screen);
 
 /* */
@@ -172,7 +178,7 @@ int   aux_xcb_select_depth(aux_xcb_ctx  *ctx,
                            int           depth);
 
 /* */
-int   aux_xcb_select_visual(aux_xcb_ctx  *ctx, 
+int   aux_xcb_select_visual(aux_xcb_ctx  *ctx,
                             int           config[]);
 
 /* */
@@ -195,8 +201,8 @@ int aux_xcb_creat_gc(aux_xcb_ctx *ctx);
 
 
 /* */
-int   aux_xcb_get_atom(aux_xcb_ctx  *ctx, 
-                       const char   *name, 
+int   aux_xcb_get_atom(aux_xcb_ctx  *ctx,
+                       const char   *name,
                        xcb_atom_t   *atom);
 
 /* */
@@ -218,9 +224,9 @@ int   aux_xcb_ev_func(aux_xcb_ctx *ctx);
 int   aux_xcb_empty_events(aux_xcb_ctx *ctx);
 
 /* */
-int aux_xcb_change_prop(aux_xcb_ctx  *ctx, 
-                        uint8_t       mode, 
-                        uint32_t      flag, 
+int aux_xcb_change_prop(aux_xcb_ctx  *ctx,
+                        uint8_t       mode,
+                        uint32_t      flag,
                         const void   *data);
 
 /* */
@@ -230,14 +236,14 @@ int aux_xcb_move_window(aux_xcb_ctx *ctx, int x, int y);
 int aux_xcb_get_desk_worka(aux_xcb_ctx *ctx, uint32_t rc[4]);
 
 /* */
-int aux_xcb_get_prop(aux_xcb_ctx      *ctx, 
-                     uint32_t          flag, 
-                     const void       *arg, 
-                     unsigned long    *size, 
+int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
+                     uint32_t          flag,
+                     const void       *arg,
+                     unsigned long    *size,
                      void           **data);
 
 /* */
-int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx, 
+int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
                             int           config[]);
 
 /* */
@@ -250,7 +256,7 @@ int aux_xcb_flush_front_buf(aux_xcb_ctx *ctx);
 int aux_xcb_get_extents_window(aux_xcb_ctx *ctx, uint32_t extents[4]); /* l,r,t,b */
 
 /* */
-int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx, 
+int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
                           int           config[]
                          );
 
