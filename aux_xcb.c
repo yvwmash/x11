@@ -58,7 +58,7 @@ int aux_xcb_destroy_window(aux_xcb_ctx *ctx)
   ctx->pixmap_format         = -1;    /* in case XCB pixmap formats start from zero */
   error       = xcb_request_check(ctx->conn, cookie);
   if(error){
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -118,7 +118,7 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
 
   error = xcb_request_check(c, cookie);
   if (error) {
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -140,7 +140,7 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
   error  = xcb_request_check(c, cookie);
   if (error) {
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    ctx->x11ext_present      = false;
    ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
    ctx->x11ext_present_ev_base  = 0;
@@ -165,7 +165,7 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
   error  = xcb_request_check(c, cookie);
   if (error) {
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    ctx->x11ext_randr      = false;
   }
   free(error);
@@ -190,7 +190,7 @@ int aux_xcb_empty_events(aux_xcb_ctx *ctx)
   ev = xcb_poll_for_event(ctx->conn);
   if (ev && (ev->response_type == 0)){
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)ev);
+   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)ev)
    free(ev);
    return -1;
   }
@@ -286,7 +286,7 @@ int aux_xcb_ev_func(aux_xcb_ctx *ctx)
   unsigned etyp = event->response_type & 0x7f;
 
   if (event && (etyp == 0)){ /* error recieved */
-   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)event);
+   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)event)
    free(event);
    return -1;
   }
@@ -840,7 +840,7 @@ static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
 						);
  error = xcb_request_check(c, cookie);
  if (error) {
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
@@ -907,7 +907,7 @@ int aux_xcb_get_extents_window(aux_xcb_ctx *ctx, uint32_t extents[4]) /* l,r,t,b
   }
   if (ev && (ev->response_type == 0)){ /* error */
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)ev);
+   AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)ev)
    status = -1;
    goto done_get_extents;
   }
@@ -1036,7 +1036,7 @@ int aux_xcb_change_prop(aux_xcb_ctx *ctx, uint8_t mode, uint32_t flag, const voi
                                      );
  error = xcb_request_check(c, cookie);
  if (error) {
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
@@ -1100,7 +1100,7 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
 
  reply  = xcb_get_property_reply(c, cookie, &error);
  if(NULL == reply){
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   status = -1;
   goto done_prop_func;
  }
@@ -1199,7 +1199,7 @@ int aux_xcb_free_pixmap(aux_xcb_ctx *ctx)
   ctx->pixmap = (uint32_t)0;
   error       = xcb_request_check(c, cookie);
   if(error) {
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -1229,7 +1229,7 @@ int aux_xcb_creat_pixmap(aux_xcb_ctx *ctx)
 
  error  = xcb_request_check(c, cookie);
  if(error) {
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
@@ -1325,7 +1325,7 @@ int aux_xcb_free_gc(aux_xcb_ctx *ctx)
   ctx->gc  = (uint32_t)0;
   error    = xcb_request_check(c, cookie);
   if(error) {
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -1354,7 +1354,7 @@ int aux_xcb_creat_gc(aux_xcb_ctx *ctx)
   cookie = xcb_create_gc_checked(c, gc, ctx->window, 0, NULL);
   error  = xcb_request_check(c, cookie);
   if(error) {
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -1377,7 +1377,7 @@ int aux_xcb_free_colormap(aux_xcb_ctx *ctx)
   ctx->colormap = (uint32_t)0;
   error         = xcb_request_check(c, cookie);
   if(error) {
-   AUX_XCB_PRINT_X11_ERROR(ctx, error);
+   AUX_XCB_PRINT_X11_ERROR(ctx, error)
    free(error);
    return -1;
   }
@@ -1407,7 +1407,7 @@ int aux_xcb_creat_colormap(aux_xcb_ctx *ctx)
 
  error = xcb_request_check(c, cookie);
  if(error) {
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
@@ -1575,7 +1575,7 @@ int aux_xcb_get_atom(aux_xcb_ctx  *ctx,
  cookie = xcb_intern_atom(ctx->conn, 0, strlen(name), name);
  reply  = xcb_intern_atom_reply(ctx->conn, cookie, &error);
  if(NULL == reply){
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
@@ -1843,7 +1843,7 @@ int aux_xcb_flush_front_buf(aux_xcb_ctx *ctx)
  );
  error  = xcb_request_check(c, cookie);
  if(error) {
-  AUX_XCB_PRINT_X11_ERROR(ctx, error);
+  AUX_XCB_PRINT_X11_ERROR(ctx, error)
   free(error);
   return -1;
  }
