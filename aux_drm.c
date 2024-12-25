@@ -8,8 +8,8 @@
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <drm/drm.h>
-#include <drm/drm_fourcc.h>
+#include <drm.h>
+#include <drm_fourcc.h>
 
 #include "aux_drm.h"
 
@@ -31,7 +31,7 @@ static void print_version(int fd) {
  if (version) {
   printf(" ! aux-drm: DRM version    : %d.%d.%d\n", version->version_major, version->version_minor, version->version_patchlevel);
   printf(" ! aux-drm: DRM name       : %s\n",       version->name);
-  printf(" ! aux-drm: DRM description: %s\n",       version->desc); 
+  printf(" ! aux-drm: DRM description: %s\n",       version->desc);
   drmFreeVersion(version);
  } else {
   fprintf(stderr, " ! aux-drm: DRM version\n");
@@ -105,9 +105,9 @@ static bool alloc_mem(aux_drm_ctx *ctx, drmModeRes const * const vres, drmModePl
   memset(ctx->vfb,   0, ctx->n_pln  * sizeof(drmModeFB2));
  }
 
- if((ctx->n_crtc < save_n_crtcs) 
-     && (ctx->n_con < save_n_con) 
-     && (ctx->n_enc < save_n_enc) 
+ if((ctx->n_crtc < save_n_crtcs)
+     && (ctx->n_con < save_n_con)
+     && (ctx->n_enc < save_n_enc)
      && (ctx->n_pln < save_n_pln))
  {
   goto end_alloc_mem;
@@ -223,10 +223,10 @@ void  aux_drm_destroy_ctx(aux_drm_ctx *ctx)
 
 /* */
 static bool do_crtcs(aux_drm_ctx *ctx, drmModeRes const * const vres) {
- bool          ret      = true;   
- int           fd       = ctx->fd;   
+ bool          ret      = true;
+ int           fd       = ctx->fd;
  drmModeCrtc  *crtc;
- 
+
  /* loop through all CRTCs */
  for (unsigned i = 0; i < ctx->n_crtc; ++i) {
   crtc = drmModeGetCrtc(fd, vres->crtcs[i]);
@@ -247,8 +247,8 @@ end_do_crtcs:
 }
 
 static bool do_con(aux_drm_ctx *ctx, drmModeRes const * const vres) {
- bool                 ret      = true;   
- int                  fd       = ctx->fd;   
+ bool                 ret      = true;
+ int                  fd       = ctx->fd;
  drmModeConnector    *connector;
  drmModePropertyPtr   dpms_prop;
  uint64_t             dpms_value;
@@ -312,7 +312,7 @@ end_do_enc:
 }
 
 static bool do_pln_and_fb(aux_drm_ctx *ctx, drmModePlaneRes const * const vplanes) {
- bool                 ret      = true;   
+ bool                 ret      = true;
  int                  fd       = ctx->fd;
  drmModePlane        *plane;
  drmModeFB2          *fb;
@@ -356,7 +356,7 @@ static drmModeEncoder      * get_encoder_id(aux_drm_ctx *ctx, unsigned id) {
    return p;
   }
  }
- 
+
  return NULL;
 }
 
@@ -369,7 +369,7 @@ static drmModeConnector * get_connector_id(aux_drm_ctx *ctx, unsigned id) {
    return p;
   }
  }
- 
+
  return NULL;
 }
 
@@ -382,7 +382,7 @@ static drmModeCrtc      * get_crtc_id(aux_drm_ctx *ctx, unsigned id) {
    return p;
   }
  }
- 
+
  return NULL;
 }
 
@@ -598,7 +598,7 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
   }
   printf(" ! \t\taux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %dx%d@%dHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
   printf(" ! \t\taux-drm:  CRTC {%03u}, position on the framebuffer x-y: {%u,%u}, WxH: {%u,%u}\n", crtc->crtc_id, crtc->x, crtc->y, crtc->width, crtc->height);
-  
+
   /* FB used */
   if(0 == crtc->buffer_id) {
    printf(" ! \t\\ttaux-drm:  no FB used\n");

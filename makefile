@@ -2,39 +2,45 @@
 #     (apt search)|(pkg search) <pattern>
 #     example: pkg search xcb-util-*
 
-CC     = clang
-CXX    = clang++
+CC     = clang19
+CXX    = clang19++
 AR     = ar
-PFLAGS       = -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=202406L
+# lld prefers static libs first then dynamic ones
+#     to use static versions use a full filesystem path(/path/to/lib/lib.a), or relative filesystem path(./lib.a)
+#     there is no Wl,Bstatic and Wl,Bdynamic for lld
+PFLAGS       = -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=202406L -D__BSD_VISIBLE=1
 SFLAGS       = -fsanitize=leak,signed-integer-overflow,bounds,float-cast-overflow,pointer-overflow,undefined
 CFLAGS_WARN    = -Weverything
 CXXFLAGS_WARN  = -Weverything
-CFLAGS       = -std=c17   -Wall -Wpedantic -Wextra $(CFLAGS_WARN)   -fpic -fopenmp
-CXXFLAGS     = -std=c++2b -Wall -Wpedantic -Wextra $(CXXFLAGS_WARN) -fpic -fopenmp
-CFLAGS_DBG   = -O0 -ggdb3 $(SFLAGS)
-CXXFLAGS_DBG = -O0 -ggdb3 $(SFLAGS)
+CFLAGS       = -std=c23   -Wall -Wpedantic -Wextra $(CFLAGS_WARN)   -fpic -fopenmp
+CXXFLAGS     = -std=c++23 -Wall -Wpedantic -Wextra $(CXXFLAGS_WARN) -fpic -fopenmp
+CFLAGS_DBG   = -O0 -ggdb3
+CXXFLAGS_DBG = -O0 -ggdb3
 CFLAGS_REL   = -O2
 CXXFLAGS_REL = -O2
-CFLAGS_DRM     = $(shell pkg-config --cflags libdrm)
-CFLAGS_EGL     = $(shell pkg-config --cflags egl glu json-c)
-CFLAGS_GL      = $(shell pkg-config --cflags gl glu)
-CFLAGS_OPENCV  = $(shell pkg-config --cflags opencv4 json-c)
-CFLAGS_CPU0    = $(shell pkg-config --cflags json-c)
+CFLAGS_DRM     != pkgconf --cflags libdrm
+CFLAGS_EGL     != pkgconf --cflags egl glu json-c
+CFLAGS_GL      != pkgconf --cflags gl glu
+CFLAGS_OPENCV  != pkgconf --cflags opencv4 json-c
+CFLAGS_CPU0    != pkgconf --cflags json-c
 
 # default build type
 BUILD    = DEBUG
 SANITIZE = ADDRESS
+
 # sanitize flags {address, thread} are incompatible for clang within same module
 .if $(SANITIZE) == ADDRESS
-    SFLAGS   += -fsanitize=address
+SFLAGS   += -fsanitize=address
 .else
-    SFLAGS   += -fsanitize=thread
+SFLAGS   += -fsanitize=thread
 .endif
+
 # flags based on build type
 .if $(BUILD) == DEBUG
-    CFLAGS   += $(CFLAGS_DBG)
-    CXXFLAGS += $(CXXFLAGS_DBG)
+    CFLAGS   += $(CFLAGS_DBG) $(SFLAGS)
+    CXXFLAGS += $(CXXFLAGS_DBG) $(SFLAGS)
 .else
+    SFLAGS   = ''
     CFLAGS   += $(CFLAGS_REL)
     CXXFLAGS += $(CXXFLAGS_REL)
 .endif
@@ -65,14 +71,14 @@ EGL_PROB = prob_egl
 OPENCV_IMG2POLY = img2poly
 CPU_COMPUTE0    = cpu_compute0
 
-INC  !=  pkg-config --cflags xcb xcb-keysyms xcb-errors xcb-image
+INC  !=  pkgconf --cflags xcb xcb-keysyms xcb-errors xcb-image
 
-LIBS_DY_XCB = -Wl,-Bdynamic $(shell pkg-config --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr)
-LIBS_DY_DRM = -Wl,-Bdynamic $(shell pkg-config --libs  libdrm)
-LIBS_DY_EGL = -Wl,-Bdynamic $(shell pkg-config --libs  egl glu)
-LIBS_DY_GL  = -Wl,-Bdynamic $(shell pkg-config --libs  gl glu)
-LIBS_DY_CV  = $(shell pkg-config --libs opencv4 json-c)
-LIBS_DY_CPU0 = $(shell pkg-config --libs json-c)
+LIBS_DY_XCB  != pkgconf --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr
+LIBS_DY_DRM  != pkgconf --libs  libdrm
+LIBS_DY_EGL  != pkgconf --libs  egl glu
+LIBS_DY_GL   != pkgconf --libs  gl glu
+LIBS_DY_CV   != pkgconf --libs opencv4 json-c
+LIBS_DY_CPU0 != pkgconf --libs json-c
 
 INL_SRC =
 BIN  = bin/$(XCB_PROB)\
@@ -114,19 +120,19 @@ mk_dirs: FORCE
 # binaries
 # link step
 bin/prob_xcb: $(OBJ_XCB) ./build/prob_xcb.o
-	$(CC) -fuse-ld=lld $(PFLAGS) $(INC) ./build/prob_xcb.o $(OBJ_XCB) -o ./bin/prob_xcb $(CFLAGS) $(LIBS_DY_XCB)
+	$(CC) $(SFLAGS) ./build/prob_xcb.o $(OBJ_XCB) -o ./bin/prob_xcb $(LIBS_DY_XCB)
 
 bin/prob_dri: $(OBJ_XCB) $(OBJ_DRM) ./build/prob_xcb_dri.o
-	$(CC) -fuse-ld=lld $(PFLAGS) $(INC) ./build/prob_xcb_dri.o $(OBJ_XCB) $(OBJ_DRM) -o ./bin/prob_dri $(CFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_XCB)
+	$(CC) $(SFLAGS) ./build/prob_xcb_dri.o $(OBJ_XCB) $(OBJ_DRM) -o ./bin/prob_dri $(LIBS_DY_DRM) $(LIBS_DY_XCB)
 
 bin/prob_egl: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) ./build/prob_egl.o
-	$(CXX) -fuse-ld=lld $(PFLAGS) $(INC) ./build/prob_egl.o $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) -o ./bin/prob_egl $(CXXFLAGS) $(CFLAGS_GL) $(CFLAGS_EGL) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_EGL) $(LIBS_DY_GL)
+	$(CXX) $(SFLAGS) ./build/prob_egl.o $(OBJ_XCB) $(OBJ_DRM) $(OBJ_EGL) -o ./bin/prob_egl $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_EGL) $(LIBS_DY_GL)
 
 bin/img2poly: $(OBJ_OPENCV) $(OBJ_VG)
-	$(CXX) -fuse-ld=lld $(PFLAGS) $(INC) $(OBJ_VG) $(OBJ_OPENCV) -o ./bin/img2poly $(CXXFLAGS) $(CFLAGS_OPENCV) $(LIBS_DY_CV)
+	$(CXX) $(SFLAGS) $(OBJ_VG) $(OBJ_OPENCV) -o ./bin/img2poly $(LIBS_DY_CV)
 
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
-	$(CXX) -fuse-ld=lld $(PFLAGS) $(INC) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(CXXFLAGS) $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
+	$(CXX) $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
 # object files, "main" files
 ./build/prob_xcb.o: prob_xcb.c $(DEPS)
@@ -149,7 +155,7 @@ bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
 	$(CC) $(PFLAGS) $(INC) -c aux_xcb.c -o ./build/aux_xcb.o  $(CFLAGS)
 
 ./build/aux_drm.o: aux_drm.c $(DEPS)
-	$(CC) $(PFLAGS) $(INC) -c aux_drm.c -o ./build/aux_drm.o  $(CFLAGS)
+	$(CC) $(PFLAGS) $(INC) -c aux_drm.c -o ./build/aux_drm.o  $(CFLAGS) $(CFLAGS_DRM)
 
 ./build/aux_raster.o: aux_raster.c $(DEPS)
 	$(CC) $(PFLAGS) $(INC) -c aux_raster.c -o ./build/aux_raster.o  $(CFLAGS)
