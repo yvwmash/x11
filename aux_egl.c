@@ -331,6 +331,8 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
    bool need_dbg  = false;
    int  vmaj      = 1;
    int  vmin      = 0;
+   int  attribs[40];
+   int  attrib_indx = 0;
 
    /* parse config array */
    if(config) {
@@ -376,10 +378,6 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
     goto l_end_creat_rctx;
    }
 
-
-   int attribs[40];
-   int attrib_indx = 0;
-
    #define EGL_CTX_ADD_ATTRIBUTE(a, v) {attribs[attrib_indx] = a; \
                                         attrib_indx += 1;         \
                                         attribs[attrib_indx] = v; \
@@ -416,7 +414,7 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
  /* endianess and byte order of a color unit(pixel) */
  #define IS_BIG_ENDIAN (!*(unsigned char *)&(uint16_t){1})
- if(config) {
+ if(config) { /* parse only for color component masks */
   int      *p;
   uint32_t  v;
   uint32_t  red_mask = 0, gre_mask = 0, blu_mask = 0;
@@ -436,6 +434,8 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
    case AUX_EGL_CTX_CONFIG_X11_BLU_MASK : {
     blu_mask = v;
    }
+    break;
+   default:
     break;
    }
   }
@@ -559,5 +559,7 @@ void aux_egl_print_error(void)
     ERROR_DESC("A NativeWindowType argument does not refer to a valid native window.");
   case(EGL_CONTEXT_LOST):
     ERROR_DESC("A power management event has occurred. The application must destroy all contexts and reinitialise OpenGL ES state and objects to continue rendering. ");
+  default:
+   ERROR_DESC("not defined");
   }
 }
