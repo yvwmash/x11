@@ -77,15 +77,15 @@ int aux_egl_disconnect(aux_egl_ctx *ctx)
 
  if(NULL != ctx->rctx) {
   if(0 == eglMakeCurrent(ctx->dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
-   AUX_EGL_PRINT_ERROR;
+   AUX_EGL_PRINT_ERROR
   }
   if(0 == eglDestroyContext(ctx->dpy, ctx->rctx)) {
-   AUX_EGL_PRINT_ERROR;
+   AUX_EGL_PRINT_ERROR
   }
  }
 
  if(0 == eglTerminate(ctx->dpy)) {
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
  }
 
  aux_zero_egl_ctx(ctx);
@@ -135,24 +135,24 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
  ctx->fn_q_device_string      = (aux_egl_cstr_pf)eglGetProcAddress("eglQueryDeviceStringEXT");
 
  if(NULL == ctx->fn_q_devices){
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
  if(NULL == ctx->fn_get_platform_display){
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
  if(NULL == ctx->fn_q_device_string){
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
 
  /* GPUs */
  if(0 == ctx->fn_q_devices(AUX_EGL_MAX_DEVICES, devices, &n_devices_total)){
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
   status = 2;
  }
 
@@ -168,12 +168,12 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
   for(int i = 0; i < n_devices_total; ++i) {
    dpy = ctx->fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, devices[i], 0);
    if(EGL_NO_DISPLAY == dpy) {
-    SKIP_EGL_DEVICE(i, "can't get platform display");
+    SKIP_EGL_DEVICE(i, "can't get platform display")
    }
 
    printf(" i aux-egl: GPU {%u}:\n", i);
    if (!eglInitialize(dpy, &maj, &min)) {
-    SKIP_EGL_DEVICE(i, "eglInitialize()");
+    SKIP_EGL_DEVICE(i, "eglInitialize()")
    }
 
    printf("\t i aux-egl: EGL API version:    %d.%d\n", maj, min);
@@ -184,7 +184,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
    /* EGL device extensions */
    es = ctx->fn_q_device_string(devices[i], EGL_EXTENSIONS);
    if(NULL == es) {
-    SKIP_EGL_DEVICE(i, "no device extensions");
+    SKIP_EGL_DEVICE(i, "no device extensions")
    }
    if(true == aux_egl_has_di_ext(dpy, "EGL_MESA_query_driver")) {
     PFNEGLGETDISPLAYDRIVERNAMEPROC get_disp_driver_nm = (PFNEGLGETDISPLAYDRIVERNAMEPROC)eglGetProcAddress("eglGetDisplayDriverName");
@@ -194,21 +194,21 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
    }
    for(const char **p = rq_de_ext; *p != NULL; ++p) {
     if(false == aux_egl_has_de_ext(ctx, devices[i], *p)) {
-     SKIP_EGL_DEVICE(i, "one of required DEVICE extensions is missing");
+     SKIP_EGL_DEVICE(i, "one of required DEVICE extensions is missing")
     }
    }
 
    /* device file */
    es = ctx->fn_q_device_string(devices[i], EGL_DRM_DEVICE_FILE_EXT);
    if(NULL == es) {
-    SKIP_EGL_DEVICE(i, "no device file mapped");
+    SKIP_EGL_DEVICE(i, "no device file mapped")
    }
    printf("\t i aux-egl: EGL device file:    %s\n", es);
 
    /* display extensions */
    for(const char **p = rq_di_ext; *p != NULL; ++p) {
     if(false == aux_egl_has_di_ext(dpy, *p)) {
-     SKIP_EGL_DEVICE(i, "one of required DISPLAY extensions is missing");
+     SKIP_EGL_DEVICE(i, "one of required DISPLAY extensions is missing")
     }
    }
 
@@ -262,13 +262,13 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
    dpy = ctx->fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, dev, 0);
    if(EGL_NO_DISPLAY == dpy) {
 	status = 2;
-    AUX_EGL_PRINT_ERROR;
+    AUX_EGL_PRINT_ERROR
     goto l_end_creat_rctx;
    }
 
    if (!eglInitialize(dpy, &maj, &min)) {
 	status = 2;
-    AUX_EGL_PRINT_ERROR;
+    AUX_EGL_PRINT_ERROR
     goto l_end_creat_rctx;
    }
   }
@@ -289,7 +289,7 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
   /* get avaible configs that match first criteria */
   if((0 == eglChooseConfig(dpy, egl_config, egl_cfgs, 1, &n_configs))){
-   AUX_EGL_PRINT_ERROR;
+   AUX_EGL_PRINT_ERROR
    status = 2;
    goto l_end_creat_rctx;
   }
@@ -327,8 +327,8 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
   {
    int  flags = 0;
    int  mask  = 0;
-   bool need_core = false;   
-   bool need_dbg  = false;   
+   bool need_core = false;
+   bool need_dbg  = false;
    int  vmaj      = 1;
    int  vmin      = 0;
 
@@ -371,7 +371,7 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
    /* assign API to the draw context */
    if(0 == eglBindAPI(EGL_OPENGL_API)) {
-    AUX_EGL_PRINT_ERROR;
+    AUX_EGL_PRINT_ERROR
     status = 3;
     goto l_end_creat_rctx;
    }
@@ -387,21 +387,21 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
    /* add attributes to an array */
    if(mask)
-    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR, mask);
+    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR, mask)
    if(flags)
-    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_FLAGS_KHR,               flags);
+    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_FLAGS_KHR,               flags)
    if(vmaj)
-    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_MAJOR_VERSION_KHR,       vmaj);
+    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_MAJOR_VERSION_KHR,       vmaj)
    if(vmin)
-    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_MINOR_VERSION_KHR,       vmin);
+    EGL_CTX_ADD_ATTRIBUTE(EGL_CONTEXT_MINOR_VERSION_KHR,       vmin)
 
-   EGL_CTX_ADD_ATTRIBUTE(EGL_NONE, EGL_NONE);
+   EGL_CTX_ADD_ATTRIBUTE(EGL_NONE, EGL_NONE)
 
    /* actual context creation */
    /*                           display   config   share           attributes */
    rctx = eglCreateContext(dpy, egl_cfg, EGL_NO_CONTEXT, attribs);
    if(EGL_NO_CONTEXT == rctx){
-    AUX_EGL_PRINT_ERROR;
+    AUX_EGL_PRINT_ERROR
     status = 4;
     goto l_end_creat_rctx;
    }
@@ -409,7 +409,7 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
  /* make current */
  if(0 == eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, rctx)) {
-  AUX_EGL_PRINT_ERROR;
+  AUX_EGL_PRINT_ERROR
   status = 3;
   goto l_end_creat_rctx;
  }
@@ -446,7 +446,7 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
      /* just test it */
     }else { /* "little endian machine" */
 	 /* X11 color unit     : ARGB            */
-     /* machine byte order : "little endian" */ 
+     /* machine byte order : "little endian" */
      /* OpenGL internal    : RGBA            */
      /* To X11(host) color unit: RGBA -> BGRA -> REV = ARGB */
      ctx->host_pixel_format = AUX_EGL_HOST_PIXEL_FORMAT_ARGB;
