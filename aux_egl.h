@@ -57,11 +57,6 @@ typedef struct aux_egl_ctx {
  int          gl_compute_work_grp_cnt[3];
  int          gl_compute_work_grp_siz[3];
  int          gl_compute_work_grp_inv;
-
- /* functions */
- aux_egl_uint_pf  fn_q_devices;            /* PFNEGLQUERYDEVICESEXTPROC        */
- aux_egl_vptr_pf  fn_get_platform_display; /* PFNEGLGETPLATFORMDISPLAYEXTPROC  */
- aux_egl_cstr_pf  fn_q_device_string     ; /* PFNEGLQUERYDEVICESTRINGEXTPROC   */
 }aux_egl_ctx;
 
 /* ***************************************************************8 */

@@ -12,6 +12,10 @@
 #include "aux_raster.h"
 #include "aux_egl.h"
 
+static PFNEGLQUERYDEVICESEXTPROC        fn_q_devices            = NULL;
+static PFNEGLGETPLATFORMDISPLAYEXTPROC  fn_get_platform_display = NULL;
+static PFNEGLQUERYDEVICESTRINGEXTPROC   fn_q_device_string      = NULL;
+
 /* */
 void aux_zero_egl_ctx(aux_egl_ctx *ctx)
 {
@@ -48,7 +52,7 @@ bool aux_egl_has_c_ext(const char *nm)
 /* EGL device extensions */
 bool aux_egl_has_de_ext(aux_egl_ctx *ctx, void *dev, const char *nm)
 {
- const char *egl_ext_lst = ctx->fn_q_device_string(dev, EGL_EXTENSIONS);
+ const char *egl_ext_lst = fn_q_device_string(dev, EGL_EXTENSIONS);
  if(NULL == egl_ext_lst){
   return false;
  }
@@ -129,29 +133,29 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
   }
  }
 
- /* client supports below functions */
- ctx->fn_q_devices            = (aux_egl_uint_pf)eglGetProcAddress("eglQueryDevicesEXT");
- ctx->fn_get_platform_display = (aux_egl_vptr_pf)eglGetProcAddress("eglGetPlatformDisplayEXT");
- ctx->fn_q_device_string      = (aux_egl_cstr_pf)eglGetProcAddress("eglQueryDeviceStringEXT");
+ /* at this point client supports below functions */
+ fn_q_devices            = eglGetProcAddress("eglQueryDevicesEXT");
+ fn_get_platform_display = eglGetProcAddress("eglGetPlatformDisplayEXT");
+ fn_q_device_string      = eglGetProcAddress("eglQueryDeviceStringEXT");
 
- if(NULL == ctx->fn_q_devices){
+ if(NULL == fn_q_devices){
   AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
- if(NULL == ctx->fn_get_platform_display){
+ if(NULL == fn_get_platform_display){
   AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
- if(NULL == ctx->fn_q_device_string){
+ if(NULL == fn_q_device_string){
   AUX_EGL_PRINT_ERROR
   status = 2;
   goto l_end_egl_connect;
  }
 
  /* GPUs */
- if(0 == ctx->fn_q_devices(AUX_EGL_MAX_DEVICES, devices, &n_devices_total)){
+ if(0 == fn_q_devices(AUX_EGL_MAX_DEVICES, devices, &n_devices_total)){
   AUX_EGL_PRINT_ERROR
   status = 2;
  }
@@ -166,7 +170,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
 #define SKIP_EGL_DEVICE(i, s) { AUX_EGL_PRINT_ERROR; status = 3; fprintf(stderr, " \t! aux-egl: GPU {%u} skip: %s\n", i, s); goto l_end_loop_gpus; }
 
   for(int i = 0; i < n_devices_total; ++i) {
-   dpy = ctx->fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, devices[i], 0);
+   dpy = fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, devices[i], 0);
    if(EGL_NO_DISPLAY == dpy) {
     SKIP_EGL_DEVICE(i, "can't get platform display")
    }
@@ -182,7 +186,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
    printf("\t i aux-egl: EGL client APIs:    %s\n", eglQueryString(dpy, EGL_CLIENT_APIS));
 
    /* EGL device extensions */
-   es = ctx->fn_q_device_string(devices[i], EGL_EXTENSIONS);
+   es = fn_q_device_string(devices[i], EGL_EXTENSIONS);
    if(NULL == es) {
     SKIP_EGL_DEVICE(i, "no device extensions")
    }
@@ -199,7 +203,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
    }
 
    /* device file */
-   es = ctx->fn_q_device_string(devices[i], EGL_DRM_DEVICE_FILE_EXT);
+   es = fn_q_device_string(devices[i], EGL_DRM_DEVICE_FILE_EXT);
    if(NULL == es) {
     SKIP_EGL_DEVICE(i, "no device file mapped")
    }
@@ -257,9 +261,10 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
   /* init EGL */
   {
-   int   maj, min;
+   int                              maj, min;
+   PFNEGLGETPLATFORMDISPLAYEXTPROC  fn_get_platform_display = eglGetProcAddress("eglGetPlatformDisplayEXT");
 
-   dpy = ctx->fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, dev, 0);
+   dpy = fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, dev, 0);
    if(EGL_NO_DISPLAY == dpy) {
 	status = 2;
     AUX_EGL_PRINT_ERROR
@@ -327,8 +332,8 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
   {
    int  flags = 0;
    int  mask  = 0;
-   bool need_core = false;
-   bool need_dbg  = false;
+   int  need_core = 0;
+   int  need_dbg  = 0;
    int  vmaj      = 1;
    int  vmin      = 0;
    int  attribs[40];
