@@ -3,7 +3,7 @@
 #     example: pkg search xcb-util-*
 
 CC     = clang19
-CXX    = clang19++
+CXX    = clang++19
 AR     = ar
 # lld prefers static libs first then dynamic ones
 #     to use static versions use a full filesystem path(/path/to/lib/lib.a), or relative filesystem path(./lib.a)
