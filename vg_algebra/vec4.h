@@ -306,14 +306,14 @@ vec4<I> clamp(const vec4<I>& x, const vec4<I>& lo, const vec4<I>& hi){
 }
 
 /* vector-matrix multiplication. NOTE: vector is a row vector, result is a row vector */
-/* A x B =  
+/* A x B =
                      ⎡a₀₀  a₀₁  a₀₂  a₀₃⎤
                      ⎢                  ⎥
                      ⎢a₁₀  a₁₁  a₁₂  a₁₃⎥
   [v₀  v₁  v₂  v₃] x ⎢                  ⎥ =   [a₀₀⋅v₀ + a₁₀⋅v₁ + a₂₀⋅v₂ + a₃₀⋅v₃,
 					 ⎢a₂₀  a₂₁  a₂₂  a₂₃⎥      a₀₁⋅v₀ + a₁₁⋅v₁ + a₂₁⋅v₂ + a₃₁⋅v₃,
                      ⎢                  ⎥      a₀₂⋅v₀ + a₁₂⋅v₁ + a₂₂⋅v₂ + a₃₂⋅v₃,
-                     ⎣a₃₀  a₃₁  a₃₂  a₃₃⎦      a₀₃⋅v₀ + a₁₃⋅v₁ + a₂₃⋅v₂ + a₃₃⋅v₃] 
+                     ⎣a₃₀  a₃₁  a₃₂  a₃₃⎦      a₀₃⋅v₀ + a₁₃⋅v₁ + a₂₃⋅v₂ + a₃₃⋅v₃]
 */
 
 template <typename I>
@@ -325,7 +325,7 @@ const vec4<I>& vec4<I>::operator *= (const mat4x4<I>& r){
  *this += m[1] * v.y;
  *this += m[2] * v.z;
  *this += m[3] * v.w;
- 
+
  return *this;
 }
 

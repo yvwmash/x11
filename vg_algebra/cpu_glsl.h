@@ -60,7 +60,7 @@ template <>
 double smoothstep(double edge0, double edge1, double x)
 {
  /* scale, bias and saturate x to 0..1 range */
- x = std::clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0); 
+ x = std::clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
  /* evaluate polynomial */
  return x * x * (3.0 - 2.0 * x);
 }
@@ -70,7 +70,7 @@ template <>
 float smoothstep(float edge0, float edge1, float x)
 {
  /* scale, bias and saturate x to 0..1 range */
- x = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f); 
+ x = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
  /* evaluate polynomial */
  return x * x * (3.0f - 2.0f * x);
 }
@@ -101,7 +101,7 @@ vec4<I> mix(const vec4<I>& a, const vec4<I>& b, I t)
 template <typename I>
 uint32_t ui_argb(I a, I r, I g, I b){
  return (((uint8_t)(a * 255.0))   << 24)
-		| (((uint8_t)(r * 255.0)) << 16) 
+		| (((uint8_t)(r * 255.0)) << 16)
         | (((uint8_t)(g * 255.0)) << 8)
         | (((uint8_t)(b * 255.0)) << 0);
 }
@@ -110,7 +110,7 @@ uint32_t ui_argb(I a, I r, I g, I b){
 template <typename I>
 uint32_t ui_argb(I a, const vec3<I>& v){
  return (((uint8_t)(a * 255.0))   << 24)
-		| (((uint8_t)(v.x * 255.0)) << 16) 
+		| (((uint8_t)(v.x * 255.0)) << 16)
         | (((uint8_t)(v.y * 255.0)) << 8)
         | (((uint8_t)(v.z * 255.0)) << 0);
 }
@@ -119,7 +119,7 @@ uint32_t ui_argb(I a, const vec3<I>& v){
 template <typename I>
 uint32_t ui_argb(const vec4<I>& v){
  return (((uint8_t)(v.x * 255.0))   << 24)
-		| (((uint8_t)(v.y * 255.0)) << 16) 
+		| (((uint8_t)(v.y * 255.0)) << 16)
         | (((uint8_t)(v.z * 255.0)) << 8)
         | (((uint8_t)(v.w * 255.0)) << 0);
 }
@@ -127,7 +127,7 @@ uint32_t ui_argb(const vec4<I>& v){
 /* */
 template <typename I>
 uint32_t ui_rgb(I r, I g, I b){
- return (((uint8_t)(r * 255.0))   << 16) 
+ return (((uint8_t)(r * 255.0))   << 16)
         | (((uint8_t)(g * 255.0)) << 8)
         | (((uint8_t)(b * 255.0)) << 0);
 }
@@ -135,7 +135,7 @@ uint32_t ui_rgb(I r, I g, I b){
 /* */
 template <typename I>
 uint32_t ui_rgb(const vec3<I>& v){
- return (((uint8_t)(v.x * 255.0))   << 16) 
+ return (((uint8_t)(v.x * 255.0))   << 16)
         | (((uint8_t)(v.y * 255.0)) << 8)
         | (((uint8_t)(v.z * 255.0)) << 0);
 }
@@ -143,7 +143,7 @@ uint32_t ui_rgb(const vec3<I>& v){
 /* */
 template <typename I>
 uint32_t ui_rgb(const vec4<I>& v){
- return (((uint8_t)(v.x * 255.0))   << 16) 
+ return (((uint8_t)(v.x * 255.0))   << 16)
         | (((uint8_t)(v.y * 255.0)) << 8)
         | (((uint8_t)(v.z * 255.0)) << 0);
 }

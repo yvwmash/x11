@@ -26,7 +26,7 @@
 /* */
 template <typename I>
 int intersect_seg        (const  segment<I>& s1,
-                          const  segment<I>& s2, 
+                          const  segment<I>& s2,
                           pt2<I>&            pi);
 
 /* */
@@ -35,18 +35,18 @@ int polygon_winding      (pt2<I>  *va, int n);
 
 /* */
 template <typename I>
-int polygon_is_diagonal  (pt2<I>   *va, 
-                          int       o, 
-                          int       n, 
-                          int       i0, 
-                          int       i1, 
+int polygon_is_diagonal  (pt2<I>   *va,
+                          int       o,
+                          int       n,
+                          int       i0,
+                          int       i1,
                           pt2<I>   *outp);
 
 /* */
 template <typename I>
-int polygon_triangles    (pt2<I>                        *va, 
-                          int                            o, 
-						  int                            n, 
+int polygon_triangles    (pt2<I>                        *va,
+                          int                            o,
+						  int                            n,
                           std::list<std::array<int,3>>  &tris);
 
 /* +++ */
@@ -75,7 +75,7 @@ int intersect_seg(const segment<I>& s1, const segment<I>& s2, pt2<I>& pi) {
   return 0;
  }
 
- pi = s1.p0 + si * u; 
+ pi = s1.p0 + si * u;
 
  return 1;
 }
@@ -83,7 +83,7 @@ int intersect_seg(const segment<I>& s1, const segment<I>& s2, pt2<I>& pi) {
 /* =========================================================================================== */
 template <typename I>
 int polygon_winding(pt2<I> *va, int n) {
- pt2<I>  *s = NULL; 
+ pt2<I>  *s = NULL;
  pt2<I>  *v = NULL;
  pt2<I>  *bv, *ev;
  int      bi, ei, vi;
@@ -98,7 +98,7 @@ int polygon_winding(pt2<I> *va, int n) {
   }
  }
 
- /* take the cross product of the edges fore 
+ /* take the cross product of the edges fore
     and aft the lowest rightmost vertex */
  bi = vi - 1;
  ei = (vi == n - 1)?0:vi+1;
@@ -142,7 +142,7 @@ int polygon_is_diagonal(pt2<I> *va, int o, int n, int i0, int i1, pt2<I> *outp) 
    return 0;
   }
  }
- 
+
  { /* no intersection. can it be outer diagonal? */
   int mi = i1 - 1; /* middle vertex of a triangle */
   if(mi < 0)
@@ -173,7 +173,7 @@ template <typename I>
 int polygon_triangles(pt2<I> *va, int o, int n, std::list<std::array<int,3>> &tris) {
  int             i = 0;
  std::list<int>  l;
- 
+
  /* indices from 0 to n-1 */
  for(; i < n; ++i){
   l.push_back(i);

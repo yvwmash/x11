@@ -10,8 +10,8 @@ AR     = ar
 #     there is no Wl,Bstatic and Wl,Bdynamic for lld
 PFLAGS       = -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=202406L -D__BSD_VISIBLE=1
 SFLAGS       = -fsanitize=leak,signed-integer-overflow,bounds,float-cast-overflow,pointer-overflow,undefined
-CFLAGS_WARN    = -Weverything
-CXXFLAGS_WARN  = -Weverything
+CFLAGS_WARN    = -Weverything -Wno-pre-c23-compat
+CXXFLAGS_WARN  = -Weverything -Wno-c++98-compat
 CFLAGS       = -std=c23   -Wall -Wpedantic -Wextra $(CFLAGS_WARN)   -fpic -fopenmp
 CXXFLAGS     = -std=c++23 -Wall -Wpedantic -Wextra $(CXXFLAGS_WARN) -fpic -fopenmp
 CFLAGS_DBG   = -O0 -ggdb3

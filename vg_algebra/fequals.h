@@ -4,23 +4,23 @@
 #include <cfloat>
 
 /* */
-bool eq_eps(double  l, 
-            double  r, 
+bool eq_eps(double  l,
+            double  r,
             double  eps = DBL_EPSILON);
 
 /* */
-bool eq_eps(float  l, 
-            float  r, 
+bool eq_eps(float  l,
+            float  r,
             float  eps = FLT_EPSILON);
 
 /* */
-bool eq_eps_ulp(double  l, 
-                double  r, 
+bool eq_eps_ulp(double  l,
+                double  r,
                 int     ulp);
 
 /* */
-bool eq_eps_ulp(float  l, 
-                float  r, 
+bool eq_eps_ulp(float  l,
+                float  r,
                 int    ulp);
 
 

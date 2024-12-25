@@ -21,7 +21,7 @@ struct vec3 {
  /* convienience constructors */
  vec3(const vec2<I> &v, I z) : x(v.x), y(v.y), z(z)   {};
  vec3(I x, const vec2<I> &v) : x(x),   y(v.x), z(v.y) {};
- 
+
  /* arithmetic */
  const vec3<I>& operator += (const vec3<I>& r);
  const vec3<I>& operator -= (const vec3<I>& r);

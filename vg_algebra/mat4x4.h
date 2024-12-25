@@ -26,7 +26,7 @@ struct mat4x4 {
 
  template <typename T>
  explicit mat4x4(const mat4x4<T>& r) : mat4x4(r[0], r[1], r[2], r[3]) {}
- 
+
  const mat4x4<I>&  operator *=     (const mat4x4<I> &r);
  vec4<I>&          operator []     (int c);       /* column */
  const vec4<I>&    operator []     (int c) const; /* column */
@@ -196,7 +196,7 @@ mat4x4<I> rotate_y    (const mat4x4<I> &m, I a) {
 
 template <typename I>
 mat4x4<I> rotate_z    (const mat4x4<I> &m, I a) {
- mat4x4<I> rz; 
+ mat4x4<I> rz;
  I c = cos(a);
  I s = sin(a);
 
@@ -258,7 +258,7 @@ mat4x4<I>  operator  *  (const mat4x4<I> &l, const mat4x4<I> &r) {
  return res *= r;
 }
 
-template <typename I> 
+template <typename I>
 mat4x4<I> ortho(I left, I right, I bottom, I top, I zNear, I zFar)
 {
  mat4x4<I> res;
@@ -277,7 +277,7 @@ mat4x4<I> look_at(vec3<I> const& eye, vec3<I> const& center, vec3<I> const& up)
  vec3<I> const f(normalize(center - eye));
  vec3<I> const s(normalize(cross(f, up)));
  vec3<I> const u(cross(s, f));
- 
+
  mat4x4<I> res;
  res[0][0] = s.x;
  res[1][0] = s.y;
