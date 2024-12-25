@@ -3,7 +3,12 @@
 
 #define GL_GLEXT_PROTOTYPES
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+
 #include <GL/gl.h>
+
+#pragma clang diagnostic pop
 
 #include "aux_gl.h"
 
