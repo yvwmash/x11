@@ -27,7 +27,7 @@ void aux_zero_gl_ctx(aux_gl_ctx *ctx);
 int aux_gl_destroy_fbo(unsigned *fb);
 
 /* */
-void  aux_gl_debug_error_cb(int         source,
+int   aux_gl_debug_error_cb(int         source,
                             int         type,
 			                unsigned    id,
 			                int         severity,
