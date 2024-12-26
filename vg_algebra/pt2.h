@@ -11,9 +11,9 @@ struct pt2 {
  I x, y;
 
  /* constructor */
- pt2()                                    {};
- pt2(const vec2<I>& v)   : x(v.x), y(v.y) {};
- pt2(I x, I y)           : x(x),   y(y)   {};
+ pt2()                                    {}
+ pt2(const vec2<I>& v)   : x(v.x), y(v.y) {}
+ pt2(I x, I y)           : x(x),   y(y)   {}
 
  /* conversion */
  explicit operator vec2<I>() const;
@@ -27,7 +27,7 @@ struct pt2 {
  pt2<I>& operator /= (const vec2<I>& v);
 
  /* accessor */
- I* data() {return (I*)&x;};
+ I* data() {return (I*)&x;}
 };
 
 /* unary */

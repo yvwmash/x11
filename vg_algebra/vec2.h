@@ -15,8 +15,8 @@ struct vec2 {
  I x, y;
 
  /* constructor */
- vec2() {};
- vec2(I x, I y) : x(x), y(y) {};
+ vec2() {}
+ vec2(I x, I y) : x(x), y(y) {}
 
  /* explicit copy assignment operator */
  vec2& operator = (const vec2& r) = default;
@@ -41,7 +41,7 @@ struct vec2 {
  /* accessors */
  I&          operator [](int r);
  const I&    operator [](int r) const;
- I*          data()             {return (I*)&x;};
+ I*          data()             {return (I*)&x;}
 };
 
  /* accessors */

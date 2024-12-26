@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
 	bool        b_inconsistency = false; /* polygon contours same level. some vertices as "in" and some as "out" */
 
 	if(1 == argc) {
-		USAGE;
+		USAGE
     }else if(2 == argc) {
 		fn = argv[1];
     }else if(3 == argc) {
@@ -225,10 +225,10 @@ int main(int argc, char** argv) {
 		bdisplay = false;
 
         if(0 != strcmp("-nd", argv[1])) {
-			USAGE;
+			USAGE
         }
     }else {
-		USAGE;
+		USAGE
 	}
 
     // Read the input image

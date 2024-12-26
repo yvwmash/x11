@@ -22,7 +22,7 @@ struct mat4x4 {
 
  /* constructor */
  mat4x4();
- mat4x4(const vec4<I>& c0, const vec4<I>& c1, const vec4<I>& c2, const vec4<I>& c3) : m{c0,c1,c2,c3} {};
+ mat4x4(const vec4<I>& c0, const vec4<I>& c1, const vec4<I>& c2, const vec4<I>& c3) : m{c0,c1,c2,c3} {}
 
  template <typename T>
  explicit mat4x4(const mat4x4<T>& r) : mat4x4(r[0], r[1], r[2], r[3]) {}
@@ -30,7 +30,7 @@ struct mat4x4 {
  const mat4x4<I>&  operator *=     (const mat4x4<I> &r);
  vec4<I>&          operator []     (int c);       /* column */
  const vec4<I>&    operator []     (int c) const; /* column */
- I*                data() const { return (I*)&m[0].x; };
+ I*                data() const { return (I*)&m[0].x; }
 };
 
 template <typename I>

@@ -12,14 +12,14 @@ struct vec4 {
  I x,y,z,w;
 
  /* constructor */
- vec4(I x, I y, I z, I w) : x(x),   y(y),   z(z),   w(w)   {};
- vec4(I x, I y, I z)      : x(x),   y(y),   z(z),   w(1)   {};
- vec4(const vec3<I>& r)   : x(r.x), y(r.y), z(r.z), w(1)   {};
- vec4(const vec2<I>& r)   : x(r.x), y(r.y), z(0), w(1)     {};
- vec4()                   : x(0), y(0), z(0), w(1)         {};
+ vec4(I x, I y, I z, I w) : x(x),   y(y),   z(z),   w(w)   {}
+ vec4(I x, I y, I z)      : x(x),   y(y),   z(z),   w(1)   {}
+ vec4(const vec3<I>& r)   : x(r.x), y(r.y), z(r.z), w(1)   {}
+ vec4(const vec2<I>& r)   : x(r.x), y(r.y), z(0), w(1)     {}
+ vec4()                   : x(0), y(0), z(0), w(1)         {}
 
  /* copy constructor */
- vec4(const vec4<double>& r) : x(r.x), y(r.y), z(r.z), w(r.w) {};
+ vec4(const vec4<double>& r) : x(r.x), y(r.y), z(r.z), w(r.w) {}
 
  /* convienience constructors */
  vec4(I x,           const vec3<I>& v)      : x(x),   y(v.x), z(v.y), w(v.z) {}
@@ -61,7 +61,7 @@ struct vec4 {
  /* accessor */
  I&          operator [](int r);
  const I&    operator [](int r) const;
- I*          data()            {return (I*)&x;};
+ I*          data()            {return (I*)&x;}
 };
 
  /* accessors */

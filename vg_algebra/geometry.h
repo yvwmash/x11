@@ -92,7 +92,11 @@ int polygon_winding(pt2<I> *va, int n) {
  s = &va[0];
  for(int i = 1; i < n; ++i){
   v = &va[i];
-  if((v->y < s->y) || ((v->y == s->y) && (v->x > s->x))){
+
+  /* comparing for <less_then>|<greater_then> can fail due to the imprecision in arithmetics.
+     comparing for equality, here, done somewhat more precise.
+  */
+  if((v->y < s->y) || (eq_eps(v->y, s->y) && (v->x > s->x))){
    vi = i;
    s  = v;
   }
@@ -188,14 +192,14 @@ int polygon_triangles(pt2<I> *va, int o, int n, std::list<std::array<int,3>> &tr
   fi = std::begin(l);
   la = std::prev(std::end(l));
   be = af = m;
-  GEOM_C_ADVANCE(fi, la, be, -1);
-  GEOM_C_ADVANCE(fi, la, af, +1);
+  GEOM_C_ADVANCE(fi, la, be, -1)
+  GEOM_C_ADVANCE(fi, la, af, +1)
   if(polygon_is_diagonal(va, o, n, *be, *af, NULL)){
    tris.push_back({*be,*m,*af});
    l.erase(m);
    m = std::begin(l);
   }else {
-   GEOM_C_ADVANCE(fi, la, m, +1);
+   GEOM_C_ADVANCE(fi, la, m, +1)
   }
  }
  be = std::begin(l);

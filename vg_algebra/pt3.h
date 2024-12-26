@@ -12,18 +12,18 @@ struct pt3 {
  I x, y, z;
 
  /* constructor */
- pt3()                                           {};
- pt3(const vec3<I>& v)  : x(v.x), y(v.y), z(v.z) {};
- pt3(const pt2<I>&  v)  : x(v.x), y(v.y), z(0)   {};
- pt3(const pt3<I>&  v)  : x(v.x), y(v.y), z(v.z) {};
- pt3(I x, I y, I z)     : x(x),   y(y),   z(z)   {};
+ pt3()                                           {}
+ pt3(const vec3<I>& v)  : x(v.x), y(v.y), z(v.z) {}
+ pt3(const pt2<I>&  v)  : x(v.x), y(v.y), z(0)   {}
+ pt3(const pt3<I>&  v)  : x(v.x), y(v.y), z(v.z) {}
+ pt3(I x, I y, I z)     : x(x),   y(y),   z(z)   {}
 
  /* translate */
  pt3<I>& operator += (const vec3<I>& v);
  pt3<I>& operator -= (const vec3<I>& v);
 
  /* accessor */
- I* data() {return (I*)&x;};
+ I* data() {return (I*)&x;}
 };
 
 /* unary */
