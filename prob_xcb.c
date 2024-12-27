@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
    if(filter == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal(id));
     f_exit_sig = true;
-   }else if(id == x11_fd) { /* x11 event */
+   }else if((int)id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
     f_win_close  = xcb_ctx.f_window_should_close;
     f_win_expose = xcb_ctx.f_window_expose;
