@@ -5,10 +5,10 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"
 
 # ifndef ARGB_UI_4F
-#define ARGB_UI_4F(a,r,g,b) (((uint8_t)(a * 255.0)) << 24) |\
-                            (((uint8_t)(r * 255.0)) << 16) |\
-                            (((uint8_t)(g * 255.0)) << 8)  |\
-                            (((uint8_t)(b * 255.0)) << 0)
+#define ARGB_UI_4F(a,r,g,b) (uint32_t)((uint32_t)((uint8_t)(a * 255.0)) << 24) |\
+                            (uint32_t)((uint32_t)((uint8_t)(r * 255.0)) << 16) |\
+                            (uint32_t)((uint32_t)((uint8_t)(g * 255.0)) << 8)  |\
+                            (uint32_t)((uint32_t)((uint8_t)(b * 255.0)) << 0)
 #endif
 
 #include <cstdint>
@@ -103,36 +103,36 @@ vec4<I> mix(const vec4<I>& a, const vec4<I>& b, I t)
 /* */
 template <typename I>
 uint32_t ui_argb(I a, I r, I g, I b){
- return (((uint8_t)(a * 255.0))   << 24)
-		| (((uint8_t)(r * 255.0)) << 16)
-        | (((uint8_t)(g * 255.0)) << 8)
-        | (((uint8_t)(b * 255.0)) << 0);
+ return (uint32_t)((uint32_t)((uint8_t)(a * 255.0))   << 24)
+		| (uint32_t)((uint32_t)((uint8_t)(r * 255.0)) << 16)
+        | (uint32_t)((uint32_t)((uint8_t)(g * 255.0)) << 8)
+        | (uint32_t)((uint32_t)((uint8_t)(b * 255.0)) << 0);
 }
 
 /* */
 template <typename I>
 uint32_t ui_argb(I a, const vec3<I>& v){
- return (((uint8_t)(a * 255.0))   << 24)
-		| (((uint8_t)(v.x * 255.0)) << 16)
-        | (((uint8_t)(v.y * 255.0)) << 8)
-        | (((uint8_t)(v.z * 255.0)) << 0);
+ return (uint32_t)((uint32_t)((uint8_t)(a * 255.0))   << 24)
+		| (uint32_t)((uint32_t)((uint8_t)(v.x * 255.0)) << 16)
+        | (uint32_t)((uint32_t)((uint8_t)(v.y * 255.0)) << 8)
+        | (uint32_t)((uint32_t)((uint8_t)(v.z * 255.0)) << 0);
 }
 
 /* */
 template <typename I>
 uint32_t ui_argb(const vec4<I>& v){
- return (((uint8_t)(v.x * 255.0))   << 24)
-		| (((uint8_t)(v.y * 255.0)) << 16)
-        | (((uint8_t)(v.z * 255.0)) << 8)
-        | (((uint8_t)(v.w * 255.0)) << 0);
+ return (uint32_t)((uint32_t)((uint8_t)(v.x * 255.0))   << 24)
+		| (uint32_t)((uint32_t)((uint8_t)(v.y * 255.0)) << 16)
+        | (uint32_t)((uint32_t)((uint8_t)(v.z * 255.0)) << 8)
+        | (uint32_t)((uint32_t)((uint8_t)(v.w * 255.0)) << 0);
 }
 
 /* */
 template <typename I>
 uint32_t ui_rgb(I r, I g, I b){
- return (((uint8_t)(r * 255.0))   << 16)
-        | (((uint8_t)(g * 255.0)) << 8)
-        | (((uint8_t)(b * 255.0)) << 0);
+ return (uint32_t)((uint32_t)((uint8_t)(r * 255.0))   << 16)
+        | (uint32_t)((uint32_t)((uint8_t)(g * 255.0)) << 8)
+        | (uint32_t)(((uint32_t)(uint8_t)(b * 255.0)) << 0);
 }
 
 /* */
