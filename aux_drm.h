@@ -78,7 +78,7 @@ bool aux_drm_is_connector_connected_id (aux_drm_ctx *ctx, unsigned id);
 int  aux_drm_connector_DPMS_idx(aux_drm_ctx *ctx, unsigned idx);
 int  aux_drm_connector_DPMS_id (aux_drm_ctx *ctx, unsigned id);
 
-void aux_drm_crtcs_freq(aux_drm_ctx *ctx, unsigned size, int *vrefresh);
+void aux_drm_crtcs_freq(aux_drm_ctx *ctx, unsigned size, uint32_t *vrefresh);
 
 int  aux_drm_queue_sq_id(aux_drm_ctx *ctx,
                          uint32_t     crtc_id,

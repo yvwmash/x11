@@ -272,7 +272,7 @@ static bool do_con(aux_drm_ctx *ctx, drmModeRes const * const vres) {
    }
    drmModeFreeProperty(dpms_prop);
   }
-  ctx->vdpms[i] = dpms_value; /* on by default */
+  ctx->vdpms[i] = (unsigned)dpms_value; /* on by default */
 
   drmModeFreeConnector(connector);
  }

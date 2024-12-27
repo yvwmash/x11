@@ -60,6 +60,7 @@ extern "C" {
 #pragma clang diagnostic ignored "-Wpadded" /* struct padding, OK */
 #pragma clang diagnostic ignored "-Wfloat-equal" /* all case are safe to a degree. still better use epsilons */
 #pragma clang diagnostic ignored "-Wsign-conversion" /* no explicit conversion */
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage" /* hundredth of it. isn't the "p + off" is a normal way to access memory in C/C++? */
 
 #include <opencv2/opencv.hpp>
 
