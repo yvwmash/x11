@@ -16,7 +16,7 @@ struct vec2 {
 
  /* constructor */
  vec2() {}
- vec2(I x, I y) : x(x), y(y) {}
+ vec2(I _x, I _y) : x(_x), y(_y) {}
 
  /* explicit copy assignment operator */
  vec2& operator = (const vec2& r) = default;

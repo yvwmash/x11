@@ -13,7 +13,7 @@ struct pt2 {
  /* constructor */
  pt2()                                    {}
  pt2(const vec2<I>& v)   : x(v.x), y(v.y) {}
- pt2(I x, I y)           : x(x),   y(y)   {}
+ pt2(I _x, I _y)         : x(_x),  y(_y)  {}
 
  /* conversion */
  explicit operator vec2<I>() const;

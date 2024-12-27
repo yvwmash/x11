@@ -12,21 +12,21 @@ struct vec4 {
  I x,y,z,w;
 
  /* constructor */
- vec4(I x, I y, I z, I w) : x(x),   y(y),   z(z),   w(w)   {}
- vec4(I x, I y, I z)      : x(x),   y(y),   z(z),   w(1)   {}
+ vec4(I _x, I _y, I _z, I _w) : x(_x),   y(_y),   z(_z),   w(_w)   {}
+ vec4(I _x, I _y, I _z)       : x(_x),   y(_y),   z(_z),   w(1)    {}
  vec4(const vec3<I>& r)   : x(r.x), y(r.y), z(r.z), w(1)   {}
- vec4(const vec2<I>& r)   : x(r.x), y(r.y), z(0), w(1)     {}
- vec4()                   : x(0), y(0), z(0), w(1)         {}
+ vec4(const vec2<I>& r)   : x(r.x), y(r.y), z(0),   w(1)   {}
+ vec4()                   : x(0),   y(0),   z(0),   w(1)   {}
 
  /* copy constructor */
  vec4(const vec4<double>& r) : x(r.x), y(r.y), z(r.z), w(r.w) {}
 
  /* convienience constructors */
- vec4(I x,           const vec3<I>& v)      : x(x),   y(v.x), z(v.y), w(v.z) {}
- vec4(I x, I y, const vec2<I>&      v)      : x(x),   y(y),   z(v.x), w(v.y) {}
- vec4(const vec3<I>& v, I x)                : x(v.x), y(v.y), z(v.z), w(x)   {}
- vec4(const vec2<I>& v, I x, I y)           : x(v.x), y(v.y), z(x),   w(y)   {}
- vec4(const vec2<I>& l, const vec2<I>& r)   : x(l.x), y(l.y), z(r.x), w(r.y) {}
+ vec4(I _x,       const vec3<I>& v)          : x(_x),   y(v.x), z(v.y), w(v.z) {}
+ vec4(I _x, I _y, const vec2<I>& v)          : x(_x),   y(_y),  z(v.x), w(v.y) {}
+ vec4(const vec3<I>& v, I _w)                : x(v.x), y(v.y), z(v.z),  w(_w)  {}
+ vec4(const vec2<I>& v, I _z, I _w)          : x(v.x), y(v.y), z(_z),   w(_w)  {}
+ vec4(const vec2<I>& l, const vec2<I>& r)    : x(l.x), y(l.y), z(r.x),  w(r.y) {}
 
  /* explicit copy assignment operator */
  vec4& operator = (const vec4& r) = default;

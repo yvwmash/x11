@@ -16,7 +16,7 @@ struct pt3 {
  pt3(const vec3<I>& v)  : x(v.x), y(v.y), z(v.z) {}
  pt3(const pt2<I>&  v)  : x(v.x), y(v.y), z(0)   {}
  pt3(const pt3<I>&  v)  : x(v.x), y(v.y), z(v.z) {}
- pt3(I x, I y, I z)     : x(x),   y(y),   z(z)   {}
+ pt3(I _x, I _y, I _z)  : x(_x),  y(_y),  z(_z)  {}
 
  /* translate */
  pt3<I>& operator += (const vec3<I>& v);
