@@ -120,7 +120,7 @@ static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_
  int                 status = 0;
  int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
  unsigned            tv = 0;
- struct json_object *parsed_json;
+ struct json_object *parsed_json = NULL;
 
  *va  = NULL;
  *n_p = 0;
@@ -231,8 +231,8 @@ int main(int argc, char *argv[])
  aux_drm_ctx              drm_ctx;
 
  /* polygons */
- pt2d                    *v_poly_vert;
- unsigned                *n_poly_vert;
+ pt2d                    *v_poly_vert = NULL;
+ unsigned                *n_poly_vert = NULL;
  unsigned                 n_poly;
 
  /* zero drm context */
@@ -379,8 +379,6 @@ int main(int argc, char *argv[])
 
  /* display polygon vertices */
  {
-  #define COLOR 0xFF0000FF
-
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
   unsigned  bf_h = xcb_ctx.img_raster_buf.h;
   auto     *pbf  = &xcb_ctx.img_raster_buf;
@@ -550,7 +548,7 @@ l_end_pixel: ;
    fflags = kq_evs[i].fflags;
 
    if(filter == EVFILT_SIGNAL) { /* signal */
-    fprintf(stderr, " ! got %s\n", strsignal(id));
+    fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
    }else if((int)id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
@@ -561,7 +559,7 @@ l_end_pixel: ;
 
     /* drm events are written in full */
     do {
-     status = read(fd, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
+     status = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
      if(status < 0) {
       if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
        break;

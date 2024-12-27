@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
    fflags = kq_evs[i].fflags;
 
    if(filter == EVFILT_SIGNAL) { /* signal */
-    fprintf(stderr, " ! got %s\n", strsignal(id));
+    fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
    }else if((int)id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
