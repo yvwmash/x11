@@ -8,6 +8,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreserved-identifier"
+#pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
@@ -236,7 +237,7 @@ static bool do_crtcs(aux_drm_ctx *ctx, drmModeRes const * const vres) {
  for (unsigned i = 0; i < ctx->n_crtc; ++i) {
   crtc = drmModeGetCrtc(fd, vres->crtcs[i]);
   if (NULL == crtc) {
-   fprintf(stderr, " * failed to get CRTC {%d:%u}\n", i, vres->crtcs[i]);
+   fprintf(stderr, " * failed to get CRTC {%u:%u}\n", i, vres->crtcs[i]);
    perror(" * failed to get DRM CRTC");
    ctx->n_crtc = i;
    ret = false;
@@ -262,7 +263,7 @@ static bool do_con(aux_drm_ctx *ctx, drmModeRes const * const vres) {
  for (unsigned i = 0; i < ctx->n_con; ++i) {
   connector = drmModeGetConnector(fd, vres->connectors[i]);
   if (NULL == connector) {
-   fprintf(stderr, " * failed to get connector {%d:%u}\n", i, vres->connectors[i]);
+   fprintf(stderr, " * failed to get connector {%u:%u}\n", i, vres->connectors[i]);
    perror(" * failed to get DRM connector");
    ctx->n_con = i;
    ret = false;
@@ -326,7 +327,7 @@ static bool do_pln_and_fb(aux_drm_ctx *ctx, drmModePlaneRes const * const vplane
  for (unsigned i = 0; i < vplanes->count_planes; ++i) {
   plane = drmModeGetPlane(fd, vplanes->planes[i]);
   if (NULL == plane) {
-   fprintf(stderr, " * failed to get plane {%d:%u}\n", i, vplanes->planes[i]);
+   fprintf(stderr, " * failed to get plane {%u:%u}\n", i, vplanes->planes[i]);
    perror(" * failed to get DRM plane");
    ctx->n_pln = i;
    ctx->n_fb  = i;
@@ -337,7 +338,7 @@ static bool do_pln_and_fb(aux_drm_ctx *ctx, drmModePlaneRes const * const vplane
   if(0 != plane->fb_id) {
    fb = drmModeGetFB2(fd, plane->fb_id);
    if (NULL == fb) {
-    fprintf(stderr, " * failed to get FB {%d:%u}\n", i, plane->fb_id);
+    fprintf(stderr, " * failed to get FB {%u:%u}\n", i, plane->fb_id);
     perror(" * failed to get DRM FB");
     ret = false;
    }
@@ -563,11 +564,11 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
  putchar('\n');
  printf(" ! aux-drm statistics\n");
  putchar('\n');
- printf(" ! aux-drm: # of CRTCs:      %d\n", ctx->n_crtc);
- printf(" ! aux-drm: # of connectors: %d\n", ctx->n_con);
- printf(" ! aux-drm: # of encoders:   %d\n", ctx->n_enc);
- printf(" ! aux-drm: # of plains:     %d\n", ctx->n_pln);
- printf(" ! aux-drm: # of fb's:       %d\n", ctx->n_fb);
+ printf(" ! aux-drm: # of CRTCs:      %u\n", ctx->n_crtc);
+ printf(" ! aux-drm: # of connectors: %u\n", ctx->n_con);
+ printf(" ! aux-drm: # of encoders:   %u\n", ctx->n_enc);
+ printf(" ! aux-drm: # of plains:     %u\n", ctx->n_pln);
+ printf(" ! aux-drm: # of fb's:       %u\n", ctx->n_fb);
  putchar('\n');
 
 #define AUX_DRM_S_NVL(s) if(NULL == (s)) s = "NULL"
@@ -601,7 +602,7 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
    printf(" ! \t\taux-drm:  no CRTC used\n");
    continue;
   }
-  printf(" ! \t\taux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %dx%d@%dHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
+  printf(" ! \t\taux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %ux%u@%uHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
   printf(" ! \t\taux-drm:  CRTC {%03u}, position on the framebuffer x-y: {%u,%u}, WxH: {%u,%u}\n", crtc->crtc_id, crtc->x, crtc->y, crtc->width, crtc->height);
 
   /* FB used */
@@ -635,7 +636,7 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
   if(NULL == crtc) {
    continue;
   }
-  printf(" ! aux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %dx%d@%dHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
+  printf(" ! aux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %ux%u@%uHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
   if(crtc->mode_valid && crtc->buffer_id) {
    r = drmCrtcGetSequence(ctx->fd, crtc->crtc_id, &seq, &ns);
    if(r < 0) {

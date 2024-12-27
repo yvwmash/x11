@@ -14,24 +14,23 @@
 
 /* *********************************************************************************** */
 
-static const char *randr_rotation_strings[] = {
-    [1] = "XCB_RANDR_ROTATION_0",
-    [2] = "XCB_RANDR_ROTATION_90",
-    [4] = "XCB_RANDR_ROTATION_180",
-    [8] = "XCB_RANDR_ROTATION_270",
-    [16] = "XCB_RANDR_ROTATION_REFLECT_X",
-    [32] = "XCB_RANDR_ROTATION_REFLECT_Y",
-};
+static const char * const s_not_defined = " * not defined";
 
-static const char *randr_connection_strings[] = {
-    "XCB_RANDR_CONNECTION_CONNECTED",
-    "XCB_RANDR_CONNECTION_DISCONNECTED",
-    "XCB_RANDR_CONNECTION_UNKOWN",
-};
+#define TOSTR(s) (#s)
 
-static const char *propstatus_strings[] = {
- "NEW", "DELETE",
-};
+static const char *randr_rotation_strings(uint8_t rotation) {
+ switch (rotation) {
+ case XCB_RANDR_ROTATION_ROTATE_0:   return TOSTR(XCB_RANDR_ROTATION_ROTATE_0);
+ case XCB_RANDR_ROTATION_ROTATE_90:  return TOSTR(XCB_RANDR_ROTATION_ROTATE_90);
+ case XCB_RANDR_ROTATION_ROTATE_180: return TOSTR(XCB_RANDR_ROTATION_ROTATE_180);
+ case XCB_RANDR_ROTATION_ROTATE_270: return TOSTR(XCB_RANDR_ROTATION_ROTATE_270);
+ case XCB_RANDR_ROTATION_REFLECT_X:  return TOSTR(XCB_RANDR_ROTATION_REFLECT_X);
+ case XCB_RANDR_ROTATION_REFLECT_Y:  return TOSTR(XCB_RANDR_ROTATION_REFLECT_Y);
+ default: break;
+ }
+
+ return s_not_defined;
+}
 
 /* *********************************************************************************** */
 
@@ -202,13 +201,11 @@ int aux_xcb_empty_events(aux_xcb_ctx *ctx)
  return 0;
 }
 
-static void on_ev_randr_notify(xcb_connection_t *c,xcb_generic_event_t *event) {
+static void on_ev_randr_notify(xcb_connection_t *c, xcb_generic_event_t *event) {
  xcb_randr_notify_event_t *ev   = (xcb_randr_notify_event_t *)event;
  uint8_t                   code = ev->subCode;
 
  (void)c;
- (void)randr_connection_strings;
- (void)propstatus_strings;
 
  printf(" ! xcb-aux: RandR: XCB_RANDR_NOTIFY\n");
 
@@ -264,7 +261,7 @@ static void on_ev_randr_screen_change(xcb_generic_event_t *event) {
 
  printf(" ! xcb-aux: RandR: XCB_RANDR_SCREEN_CHANGE_NOTIFY\n");
  printf(" ! xcb-aux: RandR: \troot 0x%x, timestamp %u, config_timestamp %u\n", ev->root, ev->timestamp, ev->config_timestamp);
- printf(" ! xcb-aux: RandR: \trotation %s\n", randr_rotation_strings[ev->rotation]);
+ printf(" ! xcb-aux: RandR: \trotation %s\n", randr_rotation_strings(ev->rotation));
  printf(" ! xcb-aux: RandR: \twidth %d, height %d, mwidth %d, mheight %d\n", ev->width, ev->height, ev->mwidth, ev->mheight);
 }
 
