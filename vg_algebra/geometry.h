@@ -109,9 +109,9 @@ int polygon_winding(pt2<I> *va, int n) {
  bv = &va[bi];
  ev = &va[ei];
 
- vec2 a = *bv - *s;
- vec2 b = *ev - *s;
- I    d  = cross(a,b);
+ vec2<I> a = *bv - *s;
+ vec2<I> b = *ev - *s;
+ I       d = cross(a,b);
  int    sn = std::signbit(d);
 
  if(sn){

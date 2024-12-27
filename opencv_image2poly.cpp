@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <sys/stat.h>
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
 #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
@@ -109,7 +111,7 @@ static int polygon_winding_order(cv::Mat &image, std::vector<cv::Point> &va)
 		vscaled.push_back( {x, y} );
 	}
 
-	int r = polygon_winding(vscaled.data(), vscaled.size());
+	int r = polygon_winding<double>(vscaled.data(), vscaled.size());
 	const char *vw[] = {
 	"POLY_WINDING_CCW",
 	"POLY_WINDING_CW",
@@ -208,8 +210,6 @@ static void print_contours(auto &va) {
 /* ================================================================================================================== */
 
 #define USAGE { fprintf(stderr, "usage: imgc2poly [-nd] <image_path>\n"); return 0; }
-
-#define RET_POLYGONS_INCONSISTENT 1
 
 int main(int argc, char** argv) {
 	const char *fn              = NULL;
