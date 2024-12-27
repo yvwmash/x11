@@ -116,7 +116,7 @@ l_end_flt_signals:
 
 /* ************************************************************************* */
 
-static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_v) {
+static int read_contours(const char *fn, pt2d **va, size_t *n_p, size_t **n_v) {
  int                 status = 0;
  int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
  unsigned            tv = 0;
@@ -157,7 +157,7 @@ static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_
 
 
  /* allocate */
- *n_v = (unsigned*)malloc(*n_p * sizeof(unsigned));
+ *n_v = (size_t*)malloc(*n_p * sizeof(unsigned));
  if(NULL == *n_v) {
   status = 3;
   goto l_end_read_contours;
@@ -172,7 +172,7 @@ static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_
  tv = 0;
  for (unsigned pi = 0; pi < *n_p; ++pi) {
   struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
-  unsigned            n;
+  size_t              n;
 
   if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
    fprintf(stderr, " * invalid polygon format at index %u\n", pi);
@@ -555,22 +555,23 @@ l_end_pixel: ;
     f_win_close  = xcb_ctx.f_window_should_close;
     f_win_expose = xcb_ctx.f_window_expose;
    }else if((int)id == dri_fd) { /* DRM event */
-	struct  aux_drm_event_crtc_sq vev[4];
+	struct  aux_drm_event_crtc_sq  vev[4];
+    ssize_t                        nread;
 
     /* drm events are written in full */
     do {
-     status = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
-     if(status < 0) {
+     nread = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
+     if(nread < 0) {
       if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
        break;
       }
       perror(" * read DRM fd: ");
       goto main_terminate;
      }
-     if(0 == status) {
+     if(0 == nread) {
       break;
      }
-    }while(status == (4 * sizeof(struct aux_drm_event_crtc_sq)));
+    }while(nread == (4 * sizeof(struct aux_drm_event_crtc_sq)));
    }
   } /* finish service epoll events */
 

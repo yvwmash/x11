@@ -100,8 +100,8 @@ static void FPS(aux_drm_ctx *ctx) {
  uint64_t         save_tm    = 0;
  uint64_t         save_sq    = 0;
  uint64_t         total      = 0;
- int64_t          lo_dev, hi_dev, avg;
- unsigned         nlate, nless, lo_late, hi_late;
+ int64_t          lo_dev, hi_dev, avg, lo_late, hi_late;
+ unsigned         nlate, nless;
  struct frame    *p;
 
  if(once) {
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
    fflags = kq_evs[i].fflags;
 
    if(flags == EVFILT_SIGNAL) { /* signal */
-    fprintf(stderr, " ! got %s\n", strsignal(id));
+    fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
    }else if(id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
@@ -359,22 +359,23 @@ int main(int argc, char *argv[])
     f_win_expose     = xcb_ctx.f_window_expose;
     f_display_change = xcb_ctx.f_eq_changed;
    }else if(id == dri_fd) { /* DRM event */
-	struct  aux_drm_event_crtc_sq vev[4];
+	struct   aux_drm_event_crtc_sq  vev[4];
+    ssize_t                         nread;
 
     /* drm events are written in full */
     do {
-     status = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
-     if(status < 0) {
+     nread = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
+     if(nread < 0) {
       if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
        break;
       }
       perror(" * read DRM fd: ");
       goto main_terminate;
      }
-     if(0 == status) {
+     if(0 == nread) {
       break;
      }
-     for(unsigned i = 0; i < (status / sizeof(struct aux_drm_event_crtc_sq)); ++i) {
+     for(unsigned i = 0; i < (nread / sizeof(struct aux_drm_event_crtc_sq)); ++i) {
       if(vev[i].base.typ == AUX_DRM_EVENT_CRTC_SEQUENCE) {
        uint32_t      crtc_idx = *(uint32_t*)(vev[i].user_data);
        uint32_t      n        = nframe[crtc_idx];
@@ -408,7 +409,7 @@ l_enqueue_new_sq:
       }
 
      }
-    }while(status == (4 * sizeof(struct aux_drm_event_crtc_sq)));
+    }while(nread == (4 * sizeof(struct aux_drm_event_crtc_sq)));
    }
   } /* finish service kqueue events */
 

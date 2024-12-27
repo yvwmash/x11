@@ -35,7 +35,7 @@ typedef struct aux_raster_buf {
  uint8_t    pad[4]; /* */
 }aux_raster_buf;
 
-#define AUX__RASTER_INVERT_Y_AXIS 1
+#define AUX_RASTER_INVERT_Y_AXIS 1
 
 /* */
 int aux_raster_putpix(int              x,
