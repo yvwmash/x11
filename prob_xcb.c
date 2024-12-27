@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
    filter = kq_evs[i].filter;
    fflags = kq_evs[i].fflags;
 
-   if(flags == EVFILT_SIGNAL) { /* signal */
+   if(filter == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal(id));
     f_exit_sig = true;
    }else if(id == x11_fd) { /* x11 event */
