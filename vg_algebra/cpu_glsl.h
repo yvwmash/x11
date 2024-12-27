@@ -1,6 +1,9 @@
 # ifndef AUX_GEOM_CPU_GLSL_H
 # define AUX_GEOM_CPU_GLSL_H
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 # ifndef ARGB_UI_4F
 #define ARGB_UI_4F(a,r,g,b) (((uint8_t)(a * 255.0)) << 24) |\
                             (((uint8_t)(r * 255.0)) << 16) |\
@@ -158,5 +161,7 @@ template <typename I>
 const vec4<I>& rgb_ui(uint32_t c, vec4<I>& v) {
  return v = {((c >> 24) & 0xFF) / 255.0, ((c >> 16) & 0xFF) / 255.0, ((c >> 8) & 0xFF) / 255.0, (c & 0xFF) / 255.0};
 }
+
+#pragma clang diagnostic pop
 
 #endif

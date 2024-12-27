@@ -43,6 +43,9 @@ extern "C" {
 #include "aux_drm.h"
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 /* ============================================================================================== */
 
 typedef pt2<double>  pt2d;
@@ -616,3 +619,5 @@ main_terminate:
 
  return status;
 }
+
+#pragma clang diagnostic pop

@@ -7,6 +7,9 @@
 #include "frwd.h"
 #include "fequals.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 template <typename I>
 struct vec4 {
  I x,y,z,w;
@@ -333,5 +336,7 @@ typedef vec4<float>    vec4f;
 typedef vec4<double>   vec4d;
 typedef vec4<unsigned> uvec4;
 typedef vec4<int>      ivec4;
+
+#pragma clang diagnostic pop
 
 # endif

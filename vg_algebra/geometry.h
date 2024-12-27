@@ -23,6 +23,9 @@
 
 /* **** */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 /* */
 template <typename I>
 int intersect_seg        (const  segment<I>& s1,
@@ -209,5 +212,7 @@ int polygon_triangles(pt2<I> *va, int o, int n, std::list<std::array<int,3>> &tr
 
  return 0;
 }
+
+#pragma clang diagnostic pop
 
 # endif

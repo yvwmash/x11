@@ -6,6 +6,9 @@
 #include "frwd.h"
 #include "fequals.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 template <typename I>
 struct pt2 {
  I x, y;
@@ -164,5 +167,7 @@ I distance(const pt2<I>& l, const pt2<I>& r){
 
 typedef pt2<float>  pt2f;
 typedef pt2<double> pt2d;
+
+#pragma clang diagnostic pop
 
 #endif

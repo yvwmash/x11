@@ -7,6 +7,9 @@
 #include "frwd.h"
 #include "fequals.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 template <typename I>
 struct vec3 {
  I x, y, z;
@@ -231,5 +234,7 @@ vec3<I> clamp(const vec3<I>& x, const vec3<I>& lo, const vec3<I>& hi){
 
 typedef vec3<float>  vec3f;
 typedef vec3<double> vec3d;
+
+#pragma clang diagnostic pop
 
 #endif

@@ -7,6 +7,9 @@
 #include "frwd.h"
 #include "fequals.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 template <typename T, typename U>
 concept same_type = std::same_as<T, U>;
 
@@ -321,5 +324,7 @@ typedef vec2<float>    vec2f;
 typedef vec2<double>   vec2d;
 typedef vec2<int>      ivec2;
 typedef vec2<unsigned> uvec2;
+
+#pragma clang diagnostic pop
 
 #endif
