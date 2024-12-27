@@ -9,6 +9,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreserved-identifier"
 #pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+#pragma clang diagnostic ignored "-Wpadded" /* offc they know what they do */
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
