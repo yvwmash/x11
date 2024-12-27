@@ -69,10 +69,10 @@ typedef struct aux_xcb_ctx {
  uint32_t                 color_unit_gre_mask; /* */
  uint32_t                 color_unit_blu_mask; /* */
 
- int                      win_x;  /* */
- int                      win_y;  /* */
- int                      win_w;  /* */
- int                      win_h;  /* */
+ int16_t                  win_x;  /* */
+ int16_t                  win_y;  /* */
+ uint16_t                 win_w;  /* */
+ uint16_t                 win_h;  /* */
  int                      pixmap_format; /* */
 
  aux_raster_buf           img_raster_buf;          /* */
@@ -216,7 +216,7 @@ int   aux_xcb_get_atom(aux_xcb_ctx  *ctx,
 int   aux_xcb_destroy_window(aux_xcb_ctx *ctx);
 
 /* */
-int   aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h);
+int   aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h);
 
 /* */
 int   aux_xcb_map_window(aux_xcb_ctx *ctx);

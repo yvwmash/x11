@@ -6,10 +6,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 #include <drm.h>
 #include <drm_fourcc.h>
+
+#pragma clang diagnostic pop
 
 #include "aux_drm.h"
 
@@ -77,11 +82,11 @@ static bool alloc_mem(aux_drm_ctx *ctx, drmModeRes const * const vres, drmModePl
  unsigned             save_n_enc   = ctx->n_enc;
  unsigned             save_n_con   = ctx->n_con;
 
- ctx->n_crtc = vres->count_crtcs;
- ctx->n_con  = vres->count_connectors;
- ctx->n_enc  = vres->count_encoders;
- ctx->n_pln  = vplanes->count_planes;
- ctx->n_fb   = vplanes->count_planes;
+ ctx->n_crtc = (unsigned)vres->count_crtcs;
+ ctx->n_con  = (unsigned)vres->count_connectors;
+ ctx->n_enc  = (unsigned)vres->count_encoders;
+ ctx->n_pln  = (unsigned)vplanes->count_planes;
+ ctx->n_fb   = (unsigned)vplanes->count_planes;
 
  if(NULL != ctx->vcrtc) {
   memset(ctx->vcrtc, 0, ctx->n_crtc * sizeof(drmModeCrtc));
@@ -298,7 +303,7 @@ static bool do_enc(aux_drm_ctx *ctx, drmModeRes const * const vres) {
   if (NULL == encoder) {
    fprintf(stderr, " * failed to get encoder {%d:%u}\n", i, vres->encoders[i]);
    perror(" * failed to get DRM encoder");
-   ctx->n_enc = i;
+   ctx->n_enc = (unsigned)i;
    ret = false;
    goto end_do_enc;
   }
@@ -393,7 +398,7 @@ static int get_crtc_idx(aux_drm_ctx *ctx, drmModeCrtc *crtc) {
  for(unsigned i = 0; i < ctx->n_crtc; ++i) {
   p = (drmModeCrtc*)ctx->vcrtc + i;
   if((0 != p->crtc_id) && (crtc->crtc_id == p->crtc_id)) {
-   return i;
+   return (int)i;
   }
  }
 
@@ -406,7 +411,7 @@ static int get_con_idx(aux_drm_ctx *ctx, drmModeConnector *con) {
  for(unsigned i = 0; i < ctx->n_con; ++i) {
   p = (drmModeConnector*)ctx->vcon + i;
   if((0 != p->connector_id) && (con->connector_id == p->connector_id)) {
-   return i;
+   return (int)i;
   }
  }
 
@@ -419,7 +424,7 @@ static int get_enc_idx(aux_drm_ctx *ctx, drmModeEncoder *enc) {
  for(unsigned i = 0; i < ctx->n_enc; ++i) {
   p = (drmModeEncoder*)ctx->venc + i;
   if((0 != p->encoder_id) && (enc->encoder_id == p->encoder_id)) {
-   return i;
+   return (int)i;
   }
  }
 
@@ -573,7 +578,7 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
   ctyp0     = drmModeGetConnectorTypeName(connector->connector_type);
   ctyp1     = cstatus[connector->connection];
   ctyp2     = cDPMS[ctx->vdpms[i]];
-  ne        = connector->count_encoders;
+  ne        = (unsigned)connector->count_encoders;
   AUX_DRM_S_NVL(ctyp0);
 
   printf(" ! aux-drm:  connector {%03u}, type: %-10s, status: %-12s, DPMS: %-8s, # encoders: %02u\n", connector->connector_id, ctyp0, ctyp1, ctyp2, ne);
@@ -699,10 +704,10 @@ bool aux_drm_is_connector_connected_id(aux_drm_ctx *ctx, unsigned id) {
 /* */
 int  aux_drm_connector_DPMS_idx(aux_drm_ctx *ctx, unsigned idx) {
  if(ctx->n_con <= idx) {
-  return false;
+  return -1;
  }
 
- return ctx->vdpms[idx];
+ return (int)ctx->vdpms[idx];
 }
 
 /* */
@@ -712,11 +717,11 @@ int  aux_drm_connector_DPMS_id (aux_drm_ctx *ctx, unsigned id) {
  for(unsigned i = 0; i < ctx->n_con; ++i) {
   connector = (drmModeConnector*)ctx->vcon + i;
   if(connector->connector_id == id) {
-   return ctx->vdpms[i];
+   return (int)ctx->vdpms[i];
   }
  }
 
- return false;
+ return -1;
 }
 
 int  aux_drm_queue_sq_id(aux_drm_ctx *ctx,
@@ -753,7 +758,7 @@ int  aux_drm_queue_sq_idx(aux_drm_ctx *ctx,
  return r;
 }
 
-void aux_drm_crtcs_freq(aux_drm_ctx *ctx, unsigned size, int *vrefresh)
+void aux_drm_crtcs_freq(aux_drm_ctx *ctx, unsigned size, uint32_t *vrefresh)
 {
  drmModeCrtc *crtc;
 

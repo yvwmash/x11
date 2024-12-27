@@ -23,7 +23,6 @@ typedef struct aux_raster_buf {
  uint16_t   w;            /* width in pixels, excluding pads                */
  uint16_t   h;            /* height in pixels                               */
  uint32_t   stride;       /* bytes per image row                            */
- int        xcb_img_fmt;  /* xcb_image_format_t                             */
  uint32_t   byte_order;   /* color component byte order                     */
  uint32_t   color_unit;   /* order of color components in color unit(pixel) */
  uint32_t   size;         /* size of image  data                            */
@@ -31,8 +30,9 @@ typedef struct aux_raster_buf {
  uint8_t    scanline_pad; /* right pad in bits                              */
  uint8_t    bpp;          /* bits per pixel, >= depth                       */
  uint8_t    depth;        /* depth in bits                                  */
+ uint8_t    xcb_img_fmt;  /* xcb_image_format_t                             */
 
- uint8_t    pad[1]; /* */
+ uint8_t    pad[4]; /* */
 }aux_raster_buf;
 
 #define AUX__RASTER_INVERT_Y_AXIS 1

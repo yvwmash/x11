@@ -50,10 +50,10 @@ int aux_xcb_destroy_window(aux_xcb_ctx *ctx)
  if(((uint32_t)ctx->window) != (uint32_t)0){
   cookie      = xcb_destroy_window_checked(c, ctx->window);
   ctx->window = (uint32_t)0;
-  ctx->win_x         = -1;
-  ctx->win_y         = -1;
-  ctx->win_w         = -1;
-  ctx->win_h         = -1;
+  ctx->win_x         = 0;
+  ctx->win_y         = 0;
+  ctx->win_w         = 0;
+  ctx->win_h         = 0;
   ctx->f_window_should_close = false; /* reset window flags */
   ctx->f_window_expose       = false; /* reset window flags */
   ctx->pixmap_format         = -1;    /* in case XCB pixmap formats start from zero */
@@ -69,7 +69,7 @@ int aux_xcb_destroy_window(aux_xcb_ctx *ctx)
 }
 
 /* */
-int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
+int aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h)
 {
  xcb_void_cookie_t    cookie;
  xcb_generic_error_t *error;
@@ -154,7 +154,7 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, int w, int h)
  if(ctx->x11ext_randr) {
   xcb_void_cookie_t    cookie;
   xcb_generic_error_t *error;
-  uint32_t             mask =   XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE
+  uint16_t             mask =   XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE
                               | XCB_RANDR_NOTIFY_MASK_OUTPUT_CHANGE
                               | XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE
                               | XCB_RANDR_NOTIFY_MASK_OUTPUT_PROPERTY
@@ -433,10 +433,10 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
  ctx->fd            = -1;  /* assign (-1) to X11 connection fd to not confuse it with stdin */
  ctx->screen_n      = -1;  /* X11 screens start from zero, so assing (-1)                   */
  ctx->pixmap_format = -1;  /* in case xcb pixmaps start from zero                           */
- ctx->win_x         = -1;
- ctx->win_y         = -1;
- ctx->win_w         = -1;
- ctx->win_h         = -1;
+ ctx->win_x         = 0;
+ ctx->win_y         = 0;
+ ctx->win_w         = 0;
+ ctx->win_h         = 0;
  ctx->img_raster_buf.shm_fd = -1;
 
  /* default out XPresent extension */
@@ -821,7 +821,7 @@ static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
  xcb_generic_error_t        *error;
  xcb_connection_t           *c      = ctx->conn;
  xcb_window_t                window = ctx->window;
- int                         mask   = XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY
+ uint32_t                    mask   = XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY
                                     | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT
                                     | XCB_EVENT_MASK_STRUCTURE_NOTIFY
                                     | XCB_EVENT_MASK_PROPERTY_CHANGE
@@ -856,16 +856,17 @@ static int xcb_send_client_wm_ev(aux_xcb_ctx     *ctx,
 
 static int xcb_request_moveresize_window(aux_xcb_ctx   *ctx,
                                          xcb_gravity_t  gravity,
-                                         int            source_indication_flag,
-                                         int            flags,
-										 uint32_t       x,
-                                         uint32_t       y,
+                                         uint32_t       source_indication_flag,
+                                         uint32_t       flags,
+										 int32_t        x,
+                                         int32_t        y,
                                          uint32_t       w,
                                          uint32_t       h
                                         )
 {
+ /* since C23 guarantees that integers are two's complement, the bit pattern of same sized int types will remain the same. */
  const uint32_t data[] = {gravity | flags | source_indication_flag << 12,
-                          x, y, w, h
+                          (uint32_t)x, (uint32_t)y, w, h
  };
  return xcb_send_client_wm_ev(ctx,                /* context */
                               ctx->screen->root,  /* destination */
@@ -884,7 +885,7 @@ int aux_xcb_move_window(aux_xcb_ctx *ctx, int x, int y)
                                       WM_EWMH_FLAG_MOVERESIZE_HAS_X       /* flags */
                                       | WM_EWMH_FLAG_MOVERESIZE_HAS_Y,    /* flags */
                                       x, y,                               /* x,y position */
-                                      -1, -1                              /* w,h */
+                                      0, 0                                /* w,h */
                                      );
 }
 
@@ -1069,7 +1070,7 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
  xcb_atom_t                  prop;
  xcb_atom_enum_t             type;
  void                       *prop_val;
- unsigned long               prop_size;
+ int                         prop_size;
  int                         status = 0;
 
  if(data)
@@ -1149,6 +1150,9 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
  prop_size  = xcb_get_property_value_length(reply);
  prop_val   = xcb_get_property_value       (reply);
 
+ if(prop_size < 0) { /* C style legacy */
+  prop_size = 0;
+ }
  if(0 == prop_size){
   fprintf(stderr, " * aux-xcb: %s:%s:%d\nno such prop\n", __FILE__, __func__, __LINE__);
   status = 1;
@@ -1157,18 +1161,18 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
 
  /* null terminate the result to make string handling easier */
  if(data){
-  *data = malloc(prop_size + 1);
+  *data = malloc((uint32_t)prop_size + 1);
   if(NULL == (*data)){
    fprintf(stderr, " * aux-xcb: %s:%s:%d\nmalloc failed.\n", __FILE__, __func__, __LINE__);
    status = 1;
    goto done_prop_func;
   }
-  memcpy(*data, prop_val, prop_size);
+  memcpy(*data, prop_val, (uint32_t)prop_size);
   ((char*)(*data))[prop_size] = '\0';
  }
 
  if(size) {
-  *size = prop_size;
+  *size = (uint32_t)prop_size;
  }
 
 done_prop_func:
@@ -1431,10 +1435,10 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
                           int           config[]
                          )
 {
- bool  has_w_f      = false, has_h_f      = false;
- bool  has_depth_f  = false;
- int   w_v      = 0, h_v       = 0;
- int   depth_v  = 0;
+ bool       has_w_f      = false, has_h_f      = false;
+ bool       has_depth_f  = false;
+ uint16_t   w_v      = 0, h_v       = 0;
+ int        depth_v  = 0;
 
  for(int *ci = config; *ci; ci += 2){
   switch(*ci){
@@ -1445,12 +1449,12 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
    }
    case AUX_XCB_CONF_WIN_WIDTH : {
     has_w_f = true;
-    w_v     = ci[1];
+    w_v     = (uint16_t)ci[1];
     break;
    }
    case AUX_XCB_CONF_WIN_HEIGHT : {
     has_h_f = true;
-    h_v     = ci[1];
+    h_v     = (uint16_t)ci[1];
     break;
    }
    default:
@@ -1582,7 +1586,7 @@ int aux_xcb_get_atom(aux_xcb_ctx  *ctx,
  xcb_generic_error_t      *error;
  xcb_intern_atom_reply_t  *reply;
 
- cookie = xcb_intern_atom(ctx->conn, 0, strlen(name), name);
+ cookie = xcb_intern_atom(ctx->conn, 0, (uint16_t)strlen(name), name);
  reply  = xcb_intern_atom_reply(ctx->conn, cookie, &error);
  if(NULL == reply){
   AUX_XCB_PRINT_X11_ERROR(ctx, error)
@@ -1640,8 +1644,8 @@ static int print_xcb_img_stat(aux_raster_buf *aux_rbuf)
 */
 static int creat_xcb_img(aux_xcb_ctx  *ctx,
                          xcb_image_t **img,
-                         int           w,
-                         int           h,
+                         uint16_t      w,
+                         uint16_t      h,
                          int           flag
                         )
 {
@@ -1652,7 +1656,10 @@ static int creat_xcb_img(aux_xcb_ctx  *ctx,
  case AUX_XCB_CONF_IMG_CONF_FLAG_MLC: /* malloc */
   break;
  case AUX_XCB_CONF_IMG_CONF_FLAG_HDR: /* return struct, but no allocation */
-  size = ~0;
+  /* https://cgit.freedesktop.org/xcb/util-image/tree/image/xcb_image.c#n266
+    ~0 is a special case, base == data == NULL with the below implementation.
+  */
+  size = (uint32_t)~0;
   break;
  default:
   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
@@ -1684,10 +1691,10 @@ int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
                            )
 {
  xcb_image_t  *xcb_img = NULL;
- bool  has_w_f  = false, has_h_f      = false;
- bool  has_fb_f = false, has_mem_fd_f = false;
- int   w_v      = 0, h_v       = 0;
- int   fb_v     = 0, mem_fd_v  = -1;
+ bool      has_w_f  = false, has_h_f      = false;
+ bool      has_fb_f = false, has_mem_fd_f = false;
+ uint16_t  w_v      = 0, h_v       = 0;
+ int       fb_v     = 0, mem_fd_v  = -1;
 
  /* check for zero config */
  if(NULL == config){
@@ -1709,12 +1716,12 @@ int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
    }
    case AUX_XCB_CONF_FB_WIDTH : {
     has_w_f = true;
-    w_v     = ci[1];
+    w_v     = (uint16_t)ci[1];
     break;
    }
    case AUX_XCB_CONF_FB_HEIGHT : {
     has_h_f = true;
-    h_v     = ci[1];
+    h_v     = (uint16_t)ci[1];
     break;
    }
    case AUX_XCB_CONF_FB_MFD_FD : {
@@ -1791,7 +1798,7 @@ int aux_xcb_creat_front_buf(aux_xcb_ctx  *ctx,
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     return -1;
    }
-   p = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, 0);
+   p = mmap(NULL, (size_t)st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, 0);
    if(MAP_FAILED == p){
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
 	close(mem_fd);
@@ -1812,7 +1819,7 @@ done_allocate:
  ctx->img_raster_buf.scanline_pad = xcb_img->scanline_pad; /* right pad in bits                */
  ctx->img_raster_buf.bpp          = xcb_img->bpp;          /* bits per pixel, >= depth         */
  ctx->img_raster_buf.depth        = xcb_img->depth;        /* depth, bits                      */
- ctx->img_raster_buf.xcb_img_fmt  = xcb_img->format;       /* xcb_image_format_t               */
+ ctx->img_raster_buf.xcb_img_fmt  = (uint8_t)xcb_img->format;  /* xcb_image_format_t               */
  if(xcb_img->byte_order == XCB_IMAGE_ORDER_MSB_FIRST){
   ctx->img_raster_buf.byte_order = AUX_RASTER_COLOR_UNIT32_MSB_FIRST; /* color component byte order     */
   ctx->img_raster_buf.color_unit = AUX_RASTER_COLOR_UNIT32_BGRA;      /* color components in this order */

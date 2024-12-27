@@ -361,8 +361,8 @@ int main(int argc, char *argv[])
   double    U    = 2.0 / std::min(bf_w, bf_h);
   double    R    = 7.0 * U;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
 
   /* return minimum distance between line segment vw and point p */
   auto dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
     return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
   };
 
-#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
 
   assert(xcb_ctx.img_raster_buf.bpp == 32);
   assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
