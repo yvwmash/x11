@@ -13,13 +13,23 @@ extern "C" {
 extern "C" {
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/signalfd.h>
-#include <sys/epoll.h>
+#include <sys/event.h>
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
+#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 
 extern "C" {
 #include <json-c/json.h>
+}
 
+#pragma clang diagnostic pop
+
+
+extern "C" {
 #include "aux_egl.h"
 #include "aux_gl.h"
 }
@@ -42,16 +52,6 @@ typedef vec4<double> vec4d;
 
 /* ============================================================================================== */
 
-/* defines for epoll */
-#define MAXEVENTS 64
-#define SET_EV(_ev,_fd,_events) {\
-                                  memset(&_ev, 0, sizeof(struct epoll_event));\
-                                  _ev.data.fd = _fd;                          \
-                                  _ev.events = _events;                       \
-        }
-
-/* ============================================================================================== */
-
 /* global exit flags */
 static volatile bool f_win_close        = false; /* exit process => window closed    */
 static volatile bool f_exit_sig         = false; /* exit process => signal           */
@@ -61,7 +61,58 @@ static          bool f_display_change   = false; /* */
 
 /* ============================================================================================== */
 
-/*  */
+/* ************************************************************************* */
+
+static int filter_signals(int kq_fd, sigset_t *mask_save) {
+ int               status = 0;
+ sigset_t          mask   = {0};
+ int               vmask[] = { /* these signals will be blocked. the signals will arrive */
+  SIGINT,                      /*  to kqueue and not to a default signal handler.        */
+  SIGQUIT,
+ };
+ constexpr size_t  n_signals = sizeof(vmask) / sizeof(vmask[0]);
+ struct    kevent  evs[n_signals];
+
+ /* set up sigmask */
+ if(sigemptyset(&mask) < 0) {
+  perror(" * sigemptyset(...)");
+  status = 1;
+  goto l_end_flt_signals;
+ }
+ /* add signals to the mask */
+ for(unsigned i = 0; i < n_signals; i += 1) {
+  if(sigaddset(&mask, vmask[i]) < 0) {
+   perror(" * sigaddset(...)");
+   status = 2;
+   goto l_end_flt_signals;
+  }
+ }
+
+ /* save old sigmask, replace it with new sigmask */
+ if(sigprocmask(SIG_BLOCK, &mask, mask_save) < 0) {
+  perror(" * sigprocmask(SIG_BLOCK, &mask, mask_save)");
+  status = 3;
+  goto l_end_flt_signals;
+ }
+
+ /* add signal events */
+ for(unsigned i = 0; i < n_signals; i += 1) {
+  EV_SET(&evs[i], vmask[i], EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+  if(kevent(kq_fd, evs, n_signals, NULL, 0,	NULL) < 0) {
+   perror(" * kevent(n_signals)");
+   status = 4;
+   goto l_end_flt_signals;
+  }
+ }
+
+l_end_flt_signals:
+ return status;
+}
+
+/* ************************************************************************* */
+
+/* ************************************************************************* */
+
 static int read_contours(const char *fn, pt2d **va, unsigned *n_p, unsigned **n_v) {
  int                 status = 0;
  int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
@@ -170,10 +221,9 @@ int main(int argc, char *argv[])
 
  int                      status = 0;
  int                      on = 1;
- int                      sig_fd = -1, ep_fd = -1, x11_fd = -1, dri_fd = -1;
- sigset_t                 mask_sigs, mask_osigs;
- struct epoll_event       ep_ev, *ep_evs = NULL;
- struct signalfd_siginfo  siginf;
+ int                      kq_fd = -1, x11_fd = -1, dri_fd = -1;
+ sigset_t                 mask_osigs = {0};
+ struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
  aux_drm_ctx              drm_ctx;
 
@@ -181,32 +231,6 @@ int main(int argc, char *argv[])
  pt2d                    *v_poly_vert;
  unsigned                *n_poly_vert;
  unsigned                 n_poly;
-
- /* set up signals */
- sigemptyset(&mask_sigs);
- sigaddset(&mask_sigs, SIGINT);  /* these signals will be blocked. the signals will arrive */
- sigaddset(&mask_sigs, SIGQUIT); /*  to epoll and not to a default signal handler.         */
-
- /* save old sigmask, replace it with new sigmask */
- if(sigprocmask(SIG_BLOCK, &mask_sigs, &mask_osigs) < 0){
-  perror(" * sigprocmask(SIG_BLOCK, &mask_sigs, &mask_osigs)");
-  status = 1;
-  goto main_terminate;
- }
-
- /* get signal file descriptor */
- if((sig_fd = signalfd(-1, &mask_sigs, 0)) < 0){
-  perror(" * signalfd(-1, &mask_sigs, 0)");
-  status = 1;
-  goto main_terminate;
- }
-
- /* set signal fd as non-blocking */
- if(ioctl(sig_fd, FIONBIO, (char *)&on) < 0){
-  perror(" * ioctl(sig_fd, FIONBIO)");
-  status = 1;
-  goto main_terminate;
- }
 
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
@@ -218,7 +242,7 @@ int main(int argc, char *argv[])
   goto main_terminate;
  }
 
- /* set non-blocking mode */
+ /* set DRM fd to non-blocking mode */
  if(ioctl(dri_fd, FIONBIO, (char *)&on) < 0){
   perror(" * ioctl(dri_fd, FIONBIO)");
   status = 1;
@@ -294,42 +318,41 @@ int main(int argc, char *argv[])
   goto main_terminate;
  }
 
- /* create epoll main file descriptor */
- if((ep_fd = epoll_create(1)) < 0){
-  perror(" * epoll_create");
+ /* create kqueue file descriptor */
+ if((kq_fd = kqueuex(KQUEUE_CLOEXEC)) < 0) {
+  perror(" * kqueue()");
   status = 1;
   goto main_terminate;
  }
 
- /* add signal event */
- SET_EV(ep_ev,sig_fd,EPOLLIN);
- if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, sig_fd, &ep_ev) < 0){
-  perror(" * epoll_ctl sig_fd");
+ /* add blocked signals to be reported by kqueue */
+ if(0 != filter_signals(kq_fd, &mask_osigs)) {
   status = 1;
   goto main_terminate;
  }
 
  /* add DRM event */
- SET_EV(ep_ev, dri_fd, EPOLLIN);
- if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, dri_fd, &ep_ev) < 0){
-  perror(" * epoll_ctl dri_fd");
-  status = 1;
-  goto main_terminate;
+ {
+  struct kevent ev;
+
+  EV_SET(&ev, dri_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+  if(kevent(kq_fd, &ev, 1, NULL, 0,	NULL) < 0) {
+   perror(" * kqueue()");
+   status = 1;
+   goto main_terminate;
+  }
  }
 
  /* add X11 event */
- SET_EV(ep_ev,x11_fd,EPOLLIN);
- if(epoll_ctl (ep_fd, EPOLL_CTL_ADD, x11_fd, &ep_ev) < 0){
-  perror(" * epoll_ctl x11_fd");
-  status = 1;
-  goto main_terminate;
- }
+ {
+  struct kevent ev;
 
- /* allocate events for epoll queue */
- if(NULL == (ep_evs = (struct epoll_event*)calloc(MAXEVENTS,sizeof(ep_ev)))){
-  perror(" * calloc(MAXEVENTS)");
-  status = 1;
-  goto main_terminate;
+  EV_SET(&ev, x11_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+  if(kevent(kq_fd, &ev, 1, NULL, 0,	NULL) < 0) {
+   perror(" * kqueue()");
+   status = 1;
+   goto main_terminate;
+  }
  }
 
  /* read polygon contours */
@@ -500,35 +523,37 @@ l_end_pixel: ;
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
  while(1) {
-  int  n, i, fd;
+  int        n, i;
+  u_short    flags;
+  u_int      fflags;
+  short      filter;
+  uintptr_t  id;
 
-  n = epoll_pwait (ep_fd, ep_evs, MAXEVENTS, -1, &mask_sigs); /* wait, signal safe */
+  n = kevent(kq_fd, NULL, 0, kq_evs, 5, NULL); /* wait, signal aware */
+  if(n < 0) { /* error, or cancellation point */
+   if(EINTR == errno) { /* EINTR */
+    f_exit_sig = true;
+   }else {
+    perror(" * kevent(...) loop interrupted by ");
+    status = 1;
+    f_exit_sig = true;
+   }
+  }
 
   for(i = 0; i < n; ++i) { // service epoll events
-   fd = ep_evs[i].data.fd;
-   if(fd == sig_fd){ /* signal */
-    puts("signal arrived");
-    status = read(fd, &siginf, sizeof(siginf));
-   if(status != sizeof(siginf)) {
-    fprintf(stderr,"read != sizeof(siginf)");
-    goto main_terminate;
-   }
-   if(siginf.ssi_signo == SIGINT) {
-     printf("got SIGINT\n");
-     f_exit_sig = true;
-    }else if(siginf.ssi_signo == SIGQUIT) {
-     printf("got SIGQUIT\n");
-     f_exit_sig = true;
-     goto main_terminate;
-    }else {
-     printf("got unregistered signal\n");
-    }
-   }else if(fd == x11_fd) { /* x11 event */
+   flags  = kq_evs[i].flags;
+   id     = kq_evs[i].ident;
+   filter = kq_evs[i].filter;
+   fflags = kq_evs[i].fflags;
+
+   if(flags == EVFILT_SIGNAL) { /* signal */
+    fprintf(stderr, " ! got %s\n", strsignal(id));
+    f_exit_sig = true;
+   }else if(id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
-    f_win_close      = xcb_ctx.f_window_should_close;
-    f_win_expose     = xcb_ctx.f_window_expose;
-    f_display_change = xcb_ctx.f_eq_changed;
-   }else if(fd == dri_fd) { /* DRM event */
+    f_win_close  = xcb_ctx.f_window_should_close;
+    f_win_expose = xcb_ctx.f_window_expose;
+   }else if(id == dri_fd) { /* DRM event */
 	struct  aux_drm_event_crtc_sq vev[4];
 
     /* drm events are written in full */
@@ -577,14 +602,8 @@ main_terminate:
   close(dri_fd);
   aux_drm_destroy_ctx(&drm_ctx);
  }
- if(sig_fd != -1){
-  close(sig_fd);
- }
- if(ep_fd != -1){
-  close(ep_fd);
- }
- if(ep_evs){
-  free(ep_evs);
+ if(kq_fd != -1) {
+  close(kq_fd);
  }
  if(NULL != v_poly_vert) {
   free(v_poly_vert);
