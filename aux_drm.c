@@ -526,11 +526,11 @@ end_drm_init_ctx:
 /* */
 void aux_drm_print_ctx(aux_drm_ctx *ctx) {
  const char          *ctyp0, *ctyp1, *ctyp2;
- drmModeFB2          *fb2;
- drmModeCrtc         *crtc;
- drmModeConnector    *connector;
- drmModeEncoder      *encoder;
- drmModePlane        *plane;
+ drmModeFB2          *fb2       = NULL;
+ drmModeCrtc         *crtc      = NULL;
+ drmModeConnector    *connector = NULL;
+ drmModeEncoder      *encoder   = NULL;
+ drmModePlane        *plane     = NULL;
  unsigned            ne;
 
  char *cstatus[] = {
@@ -609,13 +609,16 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
    printf(" ! \t\\ttaux-drm:  no FB used\n");
    continue;
   }
-  for(unsigned i = 0; i < ctx->n_fb; ++i) {
-   fb2 = (drmModeFB2*)ctx->vfb + i;
+  for(unsigned fb2_i = 0; fb2_i < ctx->n_fb; fb2_i += 1) {
+   fb2 = (drmModeFB2*)ctx->vfb + fb2_i;
+   if(NULL == fb2) {
+    continue;
+   }
    if(fb2->fb_id == crtc->buffer_id) {
    	break;
    }
   }
-  if(0 != fb2->fb_id) {
+  if((NULL != fb2) && (0 != fb2->fb_id)) {
    printf(" ! \t\t\taux-drm:  FB {%03u}, WxH: {%u,%u}\n", fb2->fb_id, fb2->width, fb2->height);
   }else {
    printf(" ! \t\\ttaux-drm:  FB not initialized\n");
@@ -629,6 +632,9 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
   int      r;
 
   crtc = (drmModeCrtc*)ctx->vcrtc + i;
+  if(NULL == crtc) {
+   continue;
+  }
   printf(" ! aux-drm:  CRTC {%03u}, mode_valid: %d, buffer_id: %03u, mode: %dx%d@%dHz\n", crtc->crtc_id, crtc->mode_valid, crtc->buffer_id, crtc->width, crtc->height, crtc->mode.vrefresh);
   if(crtc->mode_valid && crtc->buffer_id) {
    r = drmCrtcGetSequence(ctx->fd, crtc->crtc_id, &seq, &ns);
@@ -644,6 +650,9 @@ void aux_drm_print_ctx(aux_drm_ctx *ctx) {
  /* list encoders */
  for(unsigned i = 0; i < ctx->n_enc; ++i) {
   encoder = (drmModeEncoder*)ctx->venc + i;
+  if(NULL == encoder) {
+   continue;
+  }
   ctyp0 = cenc[encoder->encoder_type];
   printf(" ! aux-drm:  encoder   {%03u}, type: %-8s, CRTC ID: %03u\n", encoder->encoder_id, ctyp0, encoder->crtc_id);
  }

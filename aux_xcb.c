@@ -131,29 +131,29 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h)
 
  /* register for XPresent events */
  if(ctx->x11ext_present) {
-  xcb_void_cookie_t    cookie;
-  xcb_generic_error_t *error;
+  xcb_void_cookie_t    cookie_present;
+  xcb_generic_error_t *error_present;
   uint32_t             mask = XCB_PRESENT_EVENT_MASK_COMPLETE_NOTIFY
                               | XCB_PRESENT_EVENT_MASK_IDLE_NOTIFY;
 
   ctx->x11ext_present_eid = xcb_generate_id(c);
-  cookie = xcb_present_select_input_checked(c, window, ctx->x11ext_present_eid, mask);
-  error  = xcb_request_check(c, cookie);
-  if (error) {
+  cookie_present = xcb_present_select_input_checked(c, window, ctx->x11ext_present_eid, mask);
+  error_present  = xcb_request_check(c, cookie_present);
+  if (error_present) {
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, error)
+   AUX_XCB_PRINT_X11_ERROR(ctx, error_present)
    ctx->x11ext_present      = false;
    ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
    ctx->x11ext_present_ev_base  = 0;
    ctx->x11ext_present_err_base = 0;
   }
-  free(error);
+  free(error_present);
  }
 
  /* register for XRandR events */
  if(ctx->x11ext_randr) {
-  xcb_void_cookie_t    cookie;
-  xcb_generic_error_t *error;
+  xcb_void_cookie_t    cookie_randr;
+  xcb_generic_error_t *error_randr;
   uint16_t             mask =   XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE
                               | XCB_RANDR_NOTIFY_MASK_OUTPUT_CHANGE
                               | XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE
@@ -162,14 +162,14 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h)
                               | XCB_RANDR_NOTIFY_MASK_PROVIDER_PROPERTY
                               | XCB_RANDR_NOTIFY_MASK_RESOURCE_CHANGE
                               ;
-  cookie = xcb_randr_select_input_checked(c, window, mask);
-  error  = xcb_request_check(c, cookie);
-  if (error) {
+  cookie_randr = xcb_randr_select_input_checked(c, window, mask);
+  error_randr  = xcb_request_check(c, cookie_randr);
+  if (error_randr) {
    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-   AUX_XCB_PRINT_X11_ERROR(ctx, error)
+   AUX_XCB_PRINT_X11_ERROR(ctx, error_randr)
    ctx->x11ext_randr      = false;
   }
-  free(error);
+  free(error_randr);
  }
 
  return status;
@@ -253,6 +253,8 @@ static void on_ev_randr_notify(xcb_connection_t *c,xcb_generic_event_t *event) {
   printf("\t\t\t\ta new/delete/remove of crtc, output, or mode, something reconfigured\n");
   break;
  }
+ default:
+  return; /*  */
  }
 }
 
@@ -748,7 +750,7 @@ int aux_xcb_select_visual(aux_xcb_ctx *ctx, int config[])
   g_mask = i.data->green_mask;
   b_mask = i.data->blue_mask;
   printf(" ! xcb visual:\n"
-         " ! \t id                : %d\n"
+         " ! \t id                : %u\n"
          " ! \t depth             : %d\n"
          " ! \t class             : %d\n"
          " ! \t bits per channel  : %d\n"
@@ -1018,15 +1020,15 @@ int aux_xcb_change_prop(aux_xcb_ctx *ctx, uint8_t mode, uint32_t flag, const voi
    break;
   }
  case AUX_WM_PROP_GRAVITY: { /* in data := xcb_gravity_t enum */
-   wm_size_hints_t  *msg  = (wm_size_hints_t*)ibuf;
-   xcb_gravity_t     flag = *(xcb_gravity_t*)data;
+   wm_size_hints_t  *msg          = (wm_size_hints_t*)ibuf;
+   xcb_gravity_t     flag_gravity = *(const xcb_gravity_t*)data;
 
    prop             = ctx->atom_wm_n_h;
    type             = ctx->atom_wm_n_h_sz;
    format           = 32;
    data_len         = sizeof(wm_size_hints_t) / (32 / CHAR_BIT);
    msg->flags       = WM_ICCCM_SIZE_HINT_P_WIN_GRAVITY;
-   msg->win_gravity = flag;
+   msg->win_gravity = flag_gravity;
    data             = msg;
    break;
   }
@@ -1080,24 +1082,26 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
 
  switch(flag){
  case AUX_WM_PROP_WIN_TYP: { /* ret data := atom */
-   window = *(xcb_window_t*)arg;
+   window = *(const xcb_window_t*)arg;
    prop   = ctx->atom_wm_wtyp;
    type   = XCB_ATOM_ATOM;
    break;
   }
  case AUX_WM_PROP_WORKAREA: { /* ret data := CARDINAL[][4]/32 - x,y,w,h for each desktop */
-   window = *((xcb_window_t*)arg);
+   window = *((const xcb_window_t*)arg);
    prop   = ctx->atom_wm_worka_desk;
    type   = XCB_ATOM_CARDINAL;
    break;
   }
  case AUX_WM_PROP_WIN_FRAME: { /* ret data := CARDINAL[4]/32. l,r,t,b widths of borders */
-   window = *((xcb_window_t*)arg);
+   window = *((const xcb_window_t*)arg);
    prop   = ctx->atom_wm_frame_win;
    type   = XCB_ATOM_CARDINAL;
    break;
   }
-
+ default:
+  fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+  return -1;
  }
 
  cookie = xcb_get_property(c,                          /* xcb connection */
@@ -1118,8 +1122,8 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
  if(reply->type != type) { /* print type of the request and reply. return error. */
   xcb_get_atom_name_reply_t  *nm_reply_req;
   xcb_get_atom_name_reply_t  *nm_reply_ret;
-  char                       *nm_req;
-  char                       *nm_ret;
+  char                       *nm_req     = NULL;
+  char                       *nm_ret     = NULL;
   int                         nm_req_len = 0;
   int                         nm_ret_len = 0;
 
@@ -1135,9 +1139,9 @@ int aux_xcb_get_prop(aux_xcb_ctx      *ctx,
   }
 
   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-  if(nm_req_len)
+  if(nm_req_len && nm_req)
    fprintf(stderr, " * \taux-xcb: requested atom :%.*s\n", nm_req_len, nm_req);
-  if(nm_ret_len)
+  if(nm_ret_len && nm_ret)
    fprintf(stderr, " * \taux-xcb: returned atom  :%.*s\n", nm_ret_len, nm_ret);
   status = -1;
   if(nm_reply_req)
