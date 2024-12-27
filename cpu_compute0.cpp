@@ -560,7 +560,7 @@ l_end_pixel: ;
 
     /* drm events are written in full */
     do {
-     nread = read(id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
+     nread = read((int)id, &vev, 4 * sizeof(struct aux_drm_event_crtc_sq));
      if(nread < 0) {
       if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
        break;
