@@ -10,6 +10,9 @@
 #include "vec3.h"
 #include "vec4.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+
 template <typename I>
 struct mat4x4 {
  vec4<I> m[4];
@@ -296,5 +299,7 @@ mat4x4<I> look_at(vec3<I> const& eye, vec3<I> const& center, vec3<I> const& up)
 
 typedef mat4x4<float>  mat4x4f;
 typedef mat4x4<double> mat4x4d;
+
+#pragma clang diagnostic pop
 
 #endif
