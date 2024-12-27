@@ -93,9 +93,6 @@ static bool alloc_mem(aux_drm_ctx *ctx, drmModeRes const * const vres, drmModePl
  if(NULL != ctx->vcrtc) {
   memset(ctx->vcrtc, 0, ctx->n_crtc * sizeof(drmModeCrtc));
  }
- if(NULL != ctx->vqq) {
-  memset((void*)ctx->vqq, 0, ctx->n_crtc * sizeof(bool));
- }
  if(NULL != ctx->vcon) {
   memset(ctx->vcon , 0, ctx->n_con  * sizeof(drmModeConnector));
  }
@@ -146,14 +143,8 @@ static bool alloc_mem(aux_drm_ctx *ctx, drmModeRes const * const vres, drmModePl
 
  if(ctx->n_crtc > save_n_crtcs) {
   free(ctx->vcrtc); ctx->vcrtc = NULL;
-  free((void*)ctx->vqq);   ctx->vqq   = NULL;
   ctx->vcrtc = malloc(ctx->n_crtc * sizeof(drmModeCrtc));
   if(NULL == ctx->vcrtc) {
-   ret = false;
-   goto end_alloc_mem;
-  }
-  ctx->vqq = malloc(ctx->n_crtc * sizeof(bool));
-  if(NULL == ctx->vqq) {
    ret = false;
    goto end_alloc_mem;
   }
@@ -184,14 +175,12 @@ end_alloc_mem:
   free(ctx->vcon);
   free(ctx->venc);
   free(ctx->vcrtc);
-  free((void*)ctx->vqq);
   free(ctx->vpln);
   free(ctx->vfb);
   free(ctx->vdpms);
   ctx->vcon  = NULL;
   ctx->venc  = NULL;
   ctx->vcrtc = NULL;
-  ctx->vqq   = NULL;
   ctx->vpln  = NULL;
   ctx->vfb   = NULL;
   ctx->vdpms = NULL;
@@ -211,14 +200,12 @@ void  aux_drm_destroy_ctx(aux_drm_ctx *ctx)
  free(ctx->vcon);
  free(ctx->venc);
  free(ctx->vcrtc);
- free((void*)ctx->vqq);
  free(ctx->vpln);
  free(ctx->vfb);
  free(ctx->vdpms);
  ctx->vcon  = NULL;
  ctx->venc  = NULL;
  ctx->vcrtc = NULL;
- ctx->vqq   = NULL;
  ctx->vpln  = NULL;
  ctx->vfb   = NULL;
  ctx->vdpms = NULL;

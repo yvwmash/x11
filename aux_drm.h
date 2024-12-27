@@ -62,7 +62,6 @@ typedef struct aux_drm_ctx {
  unsigned        n_con, n_enc, n_crtc, n_pln, n_fb;
  void           *venc, *vcon, *vcrtc, *vpln, *vfb;
  unsigned       *vdpms;
- volatile  bool *vqq; /* NB: what was a reason to add vqq? what is it for?  */
 }aux_drm_ctx;
 /* *********************************************************************************** */
 
