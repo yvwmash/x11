@@ -4,10 +4,16 @@
 
 #define EGL_EGLEXT_PROTOTYPES
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <EGL/eglplatform.h>
 #include <GL/gl.h>
+
+#pragma clang diagnostic pop
 
 #include "aux_raster.h"
 #include "aux_egl.h"
