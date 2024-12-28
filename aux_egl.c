@@ -274,10 +274,6 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
   /* init EGL */
   {
    int                              maj, min;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcast-function-type-strict"
-   PFNEGLGETPLATFORMDISPLAYEXTPROC  fn_get_platform_display = (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
-#pragma clang diagnostic pop
 
    dpy = fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, dev, 0);
    if(EGL_NO_DISPLAY == dpy) {
