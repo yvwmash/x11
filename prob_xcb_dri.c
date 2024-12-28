@@ -135,6 +135,8 @@ static void FPS(aux_drm_ctx *ctx) {
  lo_late = 0;
  hi_late = 0;
 
+ (void)nlate;
+
   save_tm = tmframes[i];
   for(unsigned fi = 0; fi < vfreq[i]; ++fi) {
    p        = &vframe[i][fi];
@@ -174,9 +176,9 @@ static void FPS(aux_drm_ctx *ctx) {
     }
    }
   }
-  printf(" ! aux-drm: CRTC {%u}: freq: %3d, # frames: %3d, time: %lu\n", i, nframe[i], vfreq[i], total);
+  printf(" ! aux-drm: CRTC {%u}: freq: %3u, # frames: %3u, time: %lu\n", i, nframe[i], vfreq[i], total);
   printf(" ! aux-drm: \tavg: %ld, lo_dev: %ld, hi_dev: %ld\n", avg, lo_dev, hi_dev);
-  printf(" ! aux-drm: \t# less: %u, # late: %u, lo_late: %u, hi_late: %u\n", nless, nless, lo_late, hi_late);
+  printf(" ! aux-drm: \t# less: %u, # late: %u, lo_late: %ld, hi_late: %ld\n", nless, nless, lo_late, hi_late);
 
   nframe[i]   = 0;
   tmframes[i] = save_tm;
@@ -194,7 +196,7 @@ int main(int argc, char *argv[])
 
  int                      status = 0;
  int                      on = 1;
- int                      kq_fd = -1, x11_fd = -1, dri_fd = -1;
+ int                      kq_fd = -1, x11_fd = -1, dri_fd = -1, mem_fd_imgbuf = -1;
  sigset_t                 mask_osigs = {0};
  struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
@@ -235,28 +237,35 @@ int main(int argc, char *argv[])
  /* print some DRM statistics */
  aux_drm_print_ctx(&drm_ctx);
 
- /* create shared memory that will be used later
+#define WIN_W 1024
+#define WIN_H 1024
+
+ /* create actual X11 window.
+    create shared memory that will be used later
     as a raster buffer of the window.
  */
  {
-  int mem_fd = -1;
-   mem_fd = memfd_create("_aux_xcb_img_fb", 0);
-   if(mem_fd < 0){
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    return -1;
-   }
-   if(ftruncate(mem_fd, 311 * 673 * 4) < 0){
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    close(mem_fd);
-    return -1;
-   }
-
-  int config[] = {AUX_XCB_CONF_WIN_WIDTH,  311,
-                  AUX_XCB_CONF_WIN_HEIGHT, 673,
-                  AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
-                  AUX_XCB_CONF_FB_MFD_FD,  mem_fd,
+  int config[] = {AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
+                  AUX_XCB_CONF_FB_MFD_FD,  -1,
+                  AUX_XCB_CONF_WIN_WIDTH,  WIN_W,
+                  AUX_XCB_CONF_WIN_HEIGHT, WIN_H,
                   0,0,
   };
+   mem_fd_imgbuf = memfd_create("_aux_xcb_img_fb", 0);
+   if(mem_fd_imgbuf < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+   if(ftruncate(mem_fd_imgbuf, WIN_W * WIN_H * 4) < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+
+   /* mem_fd is initialized, add it to config */
+   config[2] = AUX_XCB_CONF_FB_MFD_FD;
+   config[3] = mem_fd_imgbuf;
 
   /* auxiliary function for window creation. */
   if(aux_xcb_aux_creat_win(&xcb_ctx, config) < 0) {
@@ -350,7 +359,10 @@ int main(int argc, char *argv[])
    filter = kq_evs[i].filter;
    fflags = kq_evs[i].fflags;
 
-   if(flags == EVFILT_SIGNAL) { /* signal */
+   (void)flags;
+   (void)fflags;
+
+   if(filter == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
    }else if((int)id == x11_fd) { /* x11 event */
@@ -443,6 +455,11 @@ main_terminate:
  }
  if(kq_fd != -1){
   close(kq_fd);
+ }
+ if(mem_fd_imgbuf != -1) {
+ /* ... Instead, the shared memory object will be garbage collected when the last reference to
+    the shared memory object is removed. ... */
+  close(mem_fd_imgbuf);
  }
 
  printf("normal process termination\n");

@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 
  int                      status = 0;
  int                      on = 1;
- int                      kq_fd = -1, x11_fd = -1, dri_fd = -1;
+ int                      kq_fd = -1, x11_fd = -1, dri_fd = -1, mem_fd_imgbuf = -1;
  sigset_t                 mask_osigs = {0};
  struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
@@ -275,28 +275,32 @@ int main(int argc, char *argv[])
 #define WIN_W 1024
 #define WIN_H 1024
 
- /* create shared memory that will be used later
+ /* create actual X11 window.
+    create shared memory that will be used later
     as a raster buffer of the window.
  */
  {
-  int mem_fd = -1;
-   mem_fd = memfd_create("_aux_xcb_img_fb", 0);
-   if(mem_fd < 0){
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    return -1;
-   }
-   if(ftruncate(mem_fd, WIN_W * WIN_H * 4) < 0){
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    close(mem_fd);
-    return -1;
-   }
-
-  int config[] = {AUX_XCB_CONF_WIN_WIDTH,  WIN_W,
+  int config[] = {AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
+                  AUX_XCB_CONF_FB_MFD_FD,  -1,
+                  AUX_XCB_CONF_WIN_WIDTH,  WIN_W,
                   AUX_XCB_CONF_WIN_HEIGHT, WIN_H,
-                  AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
-                  AUX_XCB_CONF_FB_MFD_FD,  mem_fd,
                   0,0,
   };
+   mem_fd_imgbuf = memfd_create("_aux_xcb_img_fb", 0);
+   if(mem_fd_imgbuf < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+   if(ftruncate(mem_fd_imgbuf, WIN_W * WIN_H * 4) < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+
+   /* mem_fd is initialized, add it to config */
+   config[2] = AUX_XCB_CONF_FB_MFD_FD;
+   config[3] = mem_fd_imgbuf;
 
   /* auxiliary function for window creation. */
   if(aux_xcb_aux_creat_win(&xcb_ctx, config) < 0) {
@@ -553,6 +557,9 @@ l_end_pixel: ;
    filter = kq_evs[i].filter;
    fflags = kq_evs[i].fflags;
 
+   (void)flags;
+   (void)fflags;
+
    if(filter == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
@@ -612,6 +619,11 @@ main_terminate:
  }
  if(kq_fd != -1) {
   close(kq_fd);
+ }
+ if(mem_fd_imgbuf != -1) {
+ /* ... Instead, the shared memory object will be garbage collected when the last reference to
+    the shared memory object is removed. ... */
+  close(mem_fd_imgbuf);
  }
  if(NULL != v_poly_vert) {
   free(v_poly_vert);

@@ -87,14 +87,18 @@ int main(int argc, char *argv[])
   goto main_terminate;
  }
 
- /* create shared memory that will be used later
+#define WIN_W 1024
+#define WIN_H 1024
+
+ /* create actual X11 window.
+    create shared memory that will be used later
     as a raster buffer of the window.
  */
  {
   int config[] = {AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
                   AUX_XCB_CONF_FB_MFD_FD,  -1,
-                  AUX_XCB_CONF_WIN_WIDTH,  311,
-                  AUX_XCB_CONF_WIN_HEIGHT, 673,
+                  AUX_XCB_CONF_WIN_WIDTH,  WIN_W,
+                  AUX_XCB_CONF_WIN_HEIGHT, WIN_H,
                   0,0,
   };
    mem_fd_imgbuf = memfd_create("_aux_xcb_img_fb", 0);
@@ -103,7 +107,7 @@ int main(int argc, char *argv[])
     status = 1;
     goto main_terminate;
    }
-   if(ftruncate(mem_fd_imgbuf, 311 * 673 * 4) < 0) {
+   if(ftruncate(mem_fd_imgbuf, WIN_W * WIN_H * 4) < 0) {
     fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
     status = 1;
     goto main_terminate;
@@ -172,9 +176,6 @@ int main(int argc, char *argv[])
   short      filter;
   uintptr_t  id;
 
-  (void)flags;
-  (void)fflags;
-
   n = kevent(kq_fd, NULL, 0, kq_evs, 5, NULL); /* wait, signal aware */
   if(n < 0) { /* error, or cancellation point */
    if(EINTR == errno) { /* EINTR */
@@ -191,6 +192,9 @@ int main(int argc, char *argv[])
    id     = kq_evs[i].ident;
    filter = kq_evs[i].filter;
    fflags = kq_evs[i].fflags;
+
+   (void)flags;
+   (void)fflags;
 
    if(filter == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal((int)id));
