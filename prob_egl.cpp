@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 extern "C" {
 #include "aux_egl.h"
