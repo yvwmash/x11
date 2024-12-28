@@ -134,9 +134,12 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
  }
 
  /* at this point client supports below functions */
- fn_q_devices            = eglGetProcAddress("eglQueryDevicesEXT");
- fn_get_platform_display = eglGetProcAddress("eglGetPlatformDisplayEXT");
- fn_q_device_string      = eglGetProcAddress("eglQueryDeviceStringEXT");
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-strict"
+ fn_q_devices            = (PFNEGLQUERYDEVICESEXTPROC)      eglGetProcAddress("eglQueryDevicesEXT");
+ fn_get_platform_display = (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+ fn_q_device_string      = (PFNEGLQUERYDEVICESTRINGEXTPROC) eglGetProcAddress("eglQueryDeviceStringEXT");
+#pragma clang diagnostic pop
 
  if(NULL == fn_q_devices){
   AUX_EGL_PRINT_ERROR
@@ -191,7 +194,10 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
     SKIP_EGL_DEVICE(i, "no device extensions")
    }
    if(true == aux_egl_has_di_ext(dpy, "EGL_MESA_query_driver")) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-strict"
     PFNEGLGETDISPLAYDRIVERNAMEPROC get_disp_driver_nm = (PFNEGLGETDISPLAYDRIVERNAMEPROC)eglGetProcAddress("eglGetDisplayDriverName");
+#pragma clang diagnostic pop
     if(NULL != get_disp_driver_nm) {
      printf("\t i aux-drm: EGL driver name:    %s\n", get_disp_driver_nm(dpy));
     }
@@ -262,7 +268,10 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
   /* init EGL */
   {
    int                              maj, min;
-   PFNEGLGETPLATFORMDISPLAYEXTPROC  fn_get_platform_display = eglGetProcAddress("eglGetPlatformDisplayEXT");
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-strict"
+   PFNEGLGETPLATFORMDISPLAYEXTPROC  fn_get_platform_display = (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+#pragma clang diagnostic pop
 
    dpy = fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, dev, 0);
    if(EGL_NO_DISPLAY == dpy) {
