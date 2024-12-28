@@ -130,7 +130,7 @@ static int polygon_winding_order(cv::Mat &image, std::vector<cv::Point> &va)
 }
 
 /* */
-static int pnpoly(int nvert, pt2d *va, pt2d pt)
+static unsigned pnpoly(int nvert, pt2d *va, pt2d pt)
 {
   int i, j, c = 0;
 

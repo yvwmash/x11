@@ -34,7 +34,7 @@ int intersect_seg        (const  segment<I>& s1,
 
 /* */
 template <typename I>
-int polygon_winding      (pt2<I>  *va, int n);
+int polygon_winding      (pt2<I>  *va, size_t n);
 
 /* */
 template <typename I>
@@ -85,15 +85,15 @@ int intersect_seg(const segment<I>& s1, const segment<I>& s2, pt2<I>& pi) {
 
 /* =========================================================================================== */
 template <typename I>
-int polygon_winding(pt2<I> *va, int n) {
+int polygon_winding(pt2<I> *va, size_t n) {
  pt2<I>  *s = NULL;
  pt2<I>  *v = NULL;
  pt2<I>  *bv, *ev;
- int      bi, ei, vi;
+ size_t   bi, ei, vi;
 
  /* find lowest rightmost vertex */
  s = &va[0];
- for(int i = 1; i < n; ++i){
+ for(size_t i = 1; i < n; ++i){
   v = &va[i];
 
   /* comparing for <less_then>|<greater_then> can fail due to the imprecision in arithmetics.

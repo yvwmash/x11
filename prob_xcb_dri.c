@@ -88,14 +88,14 @@ struct frame {
 #define TOP_HZ (100) /* highest monitor refresh rate */
 
 static struct frame vframe[4][TOP_HZ] = {0};
-static int          nframe[4]         = {0};
+static unsigned     nframe[4]         = {0};
 static uint64_t     tmframes[4]       = {0};
 static uint64_t     sqframes[4]       = {0};
 
 static void FPS(aux_drm_ctx *ctx) {
  bool             f          = false;
  static bool      once       = true;
- static int       vfreq[4]   = {0};
+ static uint32_t  vfreq[4]   = {0};
  int64_t          delta      = 0;
  uint64_t         save_tm    = 0;
  uint64_t         save_sq    = 0;
@@ -136,24 +136,24 @@ static void FPS(aux_drm_ctx *ctx) {
  hi_late = 0;
 
   save_tm = tmframes[i];
-  for(int fi = 0; fi < vfreq[i]; ++fi) {
+  for(unsigned fi = 0; fi < vfreq[i]; ++fi) {
    p        = &vframe[i][fi];
-   delta    = p->delivery_tm - save_tm;
-   save_tm  = p->delivery_tm;
-   total   += delta;
+   delta    = (int64_t)((uint64_t)p->delivery_tm - (uint64_t)save_tm);
+   save_tm  = (uint64_t)p->delivery_tm; /* NB: possible time jumps? */
+   total   += (uint64_t)delta;
   }
 
-  avg = total / nframe[i];
+  avg     = (int64_t)(total / nframe[i]);
   save_tm = tmframes[i];
   save_sq = sqframes[i];
-  for(int fi = 0; fi < vfreq[i]; ++fi) {
+  for(unsigned fi = 0; fi < vfreq[i]; ++fi) {
    int64_t t, sq;
 
    p        = &vframe[i][fi];
-   delta    = p->delivery_tm - save_tm;
-   save_tm  = p->delivery_tm;
+   delta    = (int64_t)((uint64_t)p->delivery_tm - (uint64_t)save_tm);
+   save_tm  = (uint64_t)p->delivery_tm; /* NB: possible time jumps? */
    t        = avg - delta;
-   sq       = p->delivery_sq - save_sq;
+   sq       = (int64_t)(p->delivery_sq - save_sq);
    save_sq  = p->delivery_sq;
    if(delta < 0) { /* time frame N > time frame N + 1 */
     nless += 1;
@@ -353,12 +353,12 @@ int main(int argc, char *argv[])
    if(flags == EVFILT_SIGNAL) { /* signal */
     fprintf(stderr, " ! got %s\n", strsignal((int)id));
     f_exit_sig = true;
-   }else if(id == x11_fd) { /* x11 event */
+   }else if((int)id == x11_fd) { /* x11 event */
     aux_xcb_ev_func(&xcb_ctx);
     f_win_close      = xcb_ctx.f_window_should_close;
     f_win_expose     = xcb_ctx.f_window_expose;
     f_display_change = xcb_ctx.f_eq_changed;
-   }else if(id == dri_fd) { /* DRM event */
+   }else if((int)id == dri_fd) { /* DRM event */
 	struct   aux_drm_event_crtc_sq  vev[4];
     ssize_t                         nread;
 
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
      if(0 == nread) {
       break;
      }
-     for(unsigned i = 0; i < (nread / sizeof(struct aux_drm_event_crtc_sq)); ++i) {
+     for(unsigned i = 0; i < ((size_t)nread / sizeof(struct aux_drm_event_crtc_sq)); ++i) {
       if(vev[i].base.typ == AUX_DRM_EVENT_CRTC_SEQUENCE) {
        uint32_t      crtc_idx = *(uint32_t*)(vev[i].user_data);
        uint32_t      n        = nframe[crtc_idx];
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 
 	   /* save starting point */
        if(tmframes[crtc_idx] == 0) {
-        tmframes[crtc_idx] = vev[i].time_ns;
+        tmframes[crtc_idx] = (uint64_t)vev[i].time_ns;
         sqframes[crtc_idx] = vev[i].sequence;
         goto l_enqueue_new_sq;
        }
