@@ -31,7 +31,7 @@ void aux_zero_egl_ctx(aux_egl_ctx *ctx)
 /* */
 static bool search_elist(const char *es, const char *nm) {
  const char *p;
- long        len;
+ size_t      len;
 
  while((p = strstr(es, nm))) {
   len = strlen(nm);
@@ -58,6 +58,8 @@ bool aux_egl_has_c_ext(const char *nm)
 /* EGL device extensions */
 bool aux_egl_has_de_ext(aux_egl_ctx *ctx, void *dev, const char *nm)
 {
+ (void)ctx;
+
  const char *egl_ext_lst = fn_q_device_string(dev, EGL_EXTENSIONS);
  if(NULL == egl_ext_lst){
   return false;
@@ -172,13 +174,13 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
  /* loop GPUs */
  /* based on https://gitlab.freedesktop.org/mesa/demos/-/blob/master/src/egl/opengl/eglinfo.c */
  {
-  void        *dpy;
+  void        *dpy = NULL;
   const char  *es;
   int          maj, min;
 
 #define SKIP_EGL_DEVICE(i, s) { AUX_EGL_PRINT_ERROR; status = 3; fprintf(stderr, " \t! aux-egl: GPU {%u} skip: %s\n", i, s); goto l_end_loop_gpus; }
 
-  for(int i = 0; i < n_devices_total; ++i) {
+  for(unsigned i = 0; i < n_devices_total; ++i) {
    dpy = fn_get_platform_display(EGL_PLATFORM_DEVICE_EXT, devices[i], 0);
    if(EGL_NO_DISPLAY == dpy) {
     SKIP_EGL_DEVICE(i, "can't get platform display")
@@ -234,7 +236,7 @@ int   aux_egl_connect(aux_egl_ctx  *ctx)
    ctx->n_devices += 1;
 
 l_end_loop_gpus:
-   if(EGL_NO_DISPLAY != dpy) {
+   if((NULL != dpy) && (EGL_NO_DISPLAY != dpy)) {
     eglTerminate(dpy);
    }
   }
@@ -248,7 +250,7 @@ l_end_egl_connect:
 int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 {
  int         status  = 0;
- void       *rctx;
+ void       *rctx    = NULL;
  EGLConfig   egl_cfg = NULL;
  void       *dev     = NULL;
  void       *dpy     = NULL;
@@ -530,7 +532,15 @@ int aux_egl_creat_rctx(aux_egl_ctx  *ctx, const char *drm_fn_path, int config[])
 
 
 l_end_creat_rctx:
- if((NULL != dpy) && (NULL != rctx)) {
+ if(status) {
+  if((NULL != dpy) && (EGL_NO_DISPLAY != dpy)) { /* display initialized */
+   if((NULL != rctx) && (EGL_NO_CONTEXT != rctx)) { /* context initialized */
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT); /* set current rendering context to "empty" */
+    eglDestroyContext(dpy, rctx); /* destroy */
+   }
+   eglTerminate(dpy); /* terminate the EGL display connection */
+  }
+ } else if((NULL != dpy) && (EGL_NO_DISPLAY != dpy) && (NULL != rctx) && (EGL_NO_CONTEXT != rctx)) {
   ctx->dpy  = dpy;
   ctx->rctx = rctx;
  }
