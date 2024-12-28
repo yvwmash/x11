@@ -89,17 +89,17 @@ int polygon_winding(pt2<I> *va, size_t n) {
  pt2<I>  *s = NULL;
  pt2<I>  *v = NULL;
  pt2<I>  *bv, *ev;
- size_t   bi, ei, vi;
+ size_t   bi, ei, vi = 0;
 
  /* find lowest rightmost vertex */
  s = &va[0];
- for(size_t i = 1; i < n; ++i){
+ for(size_t i = 1; i < n; ++i) {
   v = &va[i];
 
   /* comparing for <less_then>|<greater_then> can fail due to the imprecision in arithmetics.
      comparing for equality, here, done somewhat more precise.
   */
-  if((v->y < s->y) || (eq_eps(v->y, s->y) && (v->x > s->x))){
+  if((v->y < s->y) || (eq_eps(v->y, s->y) && (v->x > s->x))) {
    vi = i;
    s  = v;
   }
@@ -108,7 +108,7 @@ int polygon_winding(pt2<I> *va, size_t n) {
  /* take the cross product of the edges fore
     and aft the lowest rightmost vertex */
  bi = vi - 1;
- ei = (vi == n - 1)?0:vi+1;
+ ei = (vi == n - 1)? 0 : vi + 1;
  bv = &va[bi];
  ev = &va[ei];
 

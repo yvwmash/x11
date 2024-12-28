@@ -54,11 +54,11 @@ static int filter_signals(int kq_fd, sigset_t *mask_save) {
  /* add signal events */
  for(unsigned i = 0; i < n_signals; i += 1) {
   EV_SET(&evs[i], vmask[i], EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
-  if(kevent(kq_fd, evs, n_signals, NULL, 0,	NULL) < 0) {
-   perror(" * kevent(n_signals)");
-   status = 4;
-   goto l_end_flt_signals;
-  }
+ }
+ if(kevent(kq_fd, evs, n_signals, NULL, 0,	NULL) < 0) {
+  perror(" * kevent(n_signals)");
+  status = 4;
+  goto l_end_flt_signals;
  }
 
 l_end_flt_signals:

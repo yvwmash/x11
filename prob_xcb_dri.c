@@ -56,11 +56,11 @@ static int filter_signals(int kq_fd, sigset_t *mask_save) {
  /* add signal events */
  for(unsigned i = 0; i < n_signals; i += 1) {
   EV_SET(&evs[i], vmask[i], EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
-  if(kevent(kq_fd, evs, n_signals, NULL, 0,	NULL) < 0) {
-   perror(" * kevent(n_signals)");
-   status = 4;
-   goto l_end_flt_signals;
-  }
+ }
+ if(kevent(kq_fd, evs, n_signals, NULL, 0,	NULL) < 0) {
+  perror(" * kevent(n_signals)");
+  status = 4;
+  goto l_end_flt_signals;
  }
 
 l_end_flt_signals:
@@ -86,6 +86,9 @@ struct frame {
 };
 
 #define TOP_HZ (100) /* highest monitor refresh rate */
+
+static uint32_t vcrtc_idx  [4];
+static uint64_t vrep_sq    [4];
 
 static struct frame vframe[4][TOP_HZ] = {0};
 static unsigned     nframe[4]         = {0};
@@ -191,9 +194,6 @@ static void FPS(aux_drm_ctx *ctx) {
 
 int main(int argc, char *argv[])
 {
- (void)argc;
- (void)argv;
-
  int                      status = 0;
  int                      on = 1;
  int                      kq_fd = -1, x11_fd = -1, dri_fd = -1, mem_fd_imgbuf = -1;
@@ -201,6 +201,9 @@ int main(int argc, char *argv[])
  struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
  aux_drm_ctx              drm_ctx;
+
+ (void)argc;
+ (void)argv;
 
  /* zero DRM context */
  aux_drm_zero_ctx(&drm_ctx);
@@ -319,8 +322,6 @@ int main(int argc, char *argv[])
  }
 
  /* enqueue all CRTCs active */
- static uint32_t vcrtc_idx  [4];
- static uint64_t vrep_sq    [4];
  {
   for(unsigned i = 0; i < 4; ++i) {
    if(aux_drm_is_crtc_active_idx(&drm_ctx, i)) {
@@ -387,22 +388,22 @@ int main(int argc, char *argv[])
      if(0 == nread) {
       break;
      }
-     for(unsigned i = 0; i < ((size_t)nread / sizeof(struct aux_drm_event_crtc_sq)); ++i) {
-      if(vev[i].base.typ == AUX_DRM_EVENT_CRTC_SEQUENCE) {
-       uint32_t      crtc_idx = *(uint32_t*)(vev[i].user_data);
-       uint32_t      n        = nframe[crtc_idx];
-       struct frame *p        = &vframe[crtc_idx][n];
+     for(unsigned ei = 0; ei < ((size_t)nread / sizeof(struct aux_drm_event_crtc_sq)); ++ei) {
+      if(vev[ei].base.typ == AUX_DRM_EVENT_CRTC_SEQUENCE) {
+       uint32_t      crtc_idx = *(uint32_t*)(vev[ei].user_data);
+       uint32_t      nf       = nframe[crtc_idx];
+       struct frame *p        = &vframe[crtc_idx][nf];
 
 	   /* save starting point */
        if(tmframes[crtc_idx] == 0) {
-        tmframes[crtc_idx] = (uint64_t)vev[i].time_ns;
-        sqframes[crtc_idx] = vev[i].sequence;
+        tmframes[crtc_idx] = (uint64_t)vev[ei].time_ns;
+        sqframes[crtc_idx] = vev[ei].sequence;
         goto l_enqueue_new_sq;
        }
 
        /* save frame */
-       p->delivery_sq    = vev[i].sequence;
-       p->delivery_tm    = vev[i].time_ns;
+       p->delivery_sq    = vev[ei].sequence;
+       p->delivery_tm    = vev[ei].time_ns;
 	   nframe[crtc_idx] += 1;
 
        /* FPS */

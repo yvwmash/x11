@@ -130,9 +130,10 @@ static int polygon_winding_order(cv::Mat &image, std::vector<cv::Point> &va)
 }
 
 /* */
-static unsigned pnpoly(int nvert, pt2d *va, pt2d pt)
+static unsigned pnpoly(size_t nvert, pt2d *va, pt2d pt)
 {
-  int i, j, c = 0;
+  size_t    i, j;
+  unsigned  c = 0;
 
   for (i = 0, j = nvert - 1; i < nvert; j = i++) {
     if ( ((va[i].y > pt.y) != (va[j].y > pt.y))
@@ -142,7 +143,7 @@ static unsigned pnpoly(int nvert, pt2d *va, pt2d pt)
        c = !c;
     }
   }
-  return c;
+  return (unsigned)c;
 }
 
 /* */
@@ -166,7 +167,7 @@ static bool remove_inner_contours(int w, int h, std::vector<std::vector<cv::Poin
  }
 
  for(unsigned i = 0; i < vnp.size(); ++i) {
-  int       save_i = -1;
+  unsigned  save_i = UINT_MAX;
   unsigned  f      = 0;
   size_t    n      = vnp[i].size();
 
@@ -187,7 +188,7 @@ static bool remove_inner_contours(int w, int h, std::vector<std::vector<cv::Poin
 
   }
 
-  if(save_i < 0) {
+  if(save_i == UINT_MAX) {
    vout.push_back(vp[i]);
   }
 
@@ -198,6 +199,8 @@ static bool remove_inner_contours(int w, int h, std::vector<std::vector<cv::Poin
  return r;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-template"
 /*  */
 static void print_contours(auto &va) {
 	for (size_t i = 0; i < va.size(); ++i) {
@@ -207,6 +210,7 @@ static void print_contours(auto &va) {
 		}
 	}
 }
+#pragma clang diagnostic pop
 
 /* ================================================================================================================== */
 
