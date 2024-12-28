@@ -57,11 +57,12 @@ struct aux_drm_event_crtc_sq {
 };
 
 typedef struct aux_drm_ctx {
- int             fd;
- bool            b_cap_plains, b_cap_aapis, b_cap_dbuf, b_cap_crtc_evblank;
- unsigned        n_con, n_enc, n_crtc, n_pln, n_fb;
  void           *venc, *vcon, *vcrtc, *vpln, *vfb;
+ int             fd;
+ unsigned        n_con, n_enc, n_crtc, n_pln, n_fb;
  unsigned       *vdpms;
+ bool            b_cap_plains, b_cap_aapis, b_cap_dbuf, b_cap_crtc_evblank;
+ uint8_t         pad[4];
 }aux_drm_ctx;
 /* *********************************************************************************** */
 

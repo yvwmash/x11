@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
   unsigned i = 0;
   unsigned vi;
   for(unsigned pi = 0; pi < n_poly; ++pi) {
-   unsigned n = n_poly_vert[pi];
+   size_t n = n_poly_vert[pi];
 
    printf("poly: %u\n", pi);
    for(vi = 0; vi < n; ++vi) {
@@ -481,8 +481,8 @@ int main(int argc, char *argv[])
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 	t = 1e18;
 
-	for(unsigned pi = 0; pi < np; pi += 1, vi += 1) { /* polygons */
-     for(unsigned ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
+	for(size_t pi = 0; pi < np; pi += 1, vi += 1) { /* polygons */
+     for(size_t ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
       v0 = vertices[vi    ];
       v1 = vertices[vi + 1];
       d2 = distance_sq(p, v0);

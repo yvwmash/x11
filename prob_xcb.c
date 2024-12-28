@@ -69,14 +69,14 @@ l_end_flt_signals:
 
 int main(int argc, char *argv[])
 {
- (void)argc;
- (void)argv;
-
  int                      status = 0, on = 1;
- int                      kq_fd = -1, x11_fd = -1;
+ int                      kq_fd = -1, x11_fd = -1, mem_fd_imgbuf = -1;
  sigset_t                 mask_osigs = {0};
  struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
+
+ (void)argc;
+ (void)argv;
 
  /* zero XCB context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -91,24 +91,27 @@ int main(int argc, char *argv[])
     as a raster buffer of the window.
  */
  {
-  int mem_fd = -1;
-   mem_fd = memfd_create("_aux_xcb_img_fb", 0);
-   if(mem_fd < 0) {
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    return -1;
-   }
-   if(ftruncate(mem_fd, 311 * 673 * 4) < 0) {
-    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
-    close(mem_fd);
-    return -1;
-   }
-
-  int config[] = {AUX_XCB_CONF_WIN_WIDTH,  311,
+  int config[] = {AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
+                  AUX_XCB_CONF_FB_MFD_FD,  -1,
+                  AUX_XCB_CONF_WIN_WIDTH,  311,
                   AUX_XCB_CONF_WIN_HEIGHT, 673,
-                  AUX_XCB_CONF_FB,         AUX_XCB_CONF_IMG_CONF_FLAG_MFD,
-                  AUX_XCB_CONF_FB_MFD_FD,  mem_fd,
                   0,0,
   };
+   mem_fd_imgbuf = memfd_create("_aux_xcb_img_fb", 0);
+   if(mem_fd_imgbuf < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+   if(ftruncate(mem_fd_imgbuf, 311 * 673 * 4) < 0) {
+    fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+    status = 1;
+    goto main_terminate;
+   }
+
+   /* mem_fd is initialized, add it to config */
+   config[2] = AUX_XCB_CONF_FB_MFD_FD;
+   config[3] = mem_fd_imgbuf;
 
   /* auxiliary function for window creation. */
   if(aux_xcb_aux_creat_win(&xcb_ctx, config) < 0) {
@@ -169,6 +172,9 @@ int main(int argc, char *argv[])
   short      filter;
   uintptr_t  id;
 
+  (void)flags;
+  (void)fflags;
+
   n = kevent(kq_fd, NULL, 0, kq_evs, 5, NULL); /* wait, signal aware */
   if(n < 0) { /* error, or cancellation point */
    if(EINTR == errno) { /* EINTR */
@@ -219,6 +225,11 @@ main_terminate:
  }
  if(kq_fd != -1) {
   close(kq_fd);
+ }
+ if(mem_fd_imgbuf != -1) {
+ /* ... Instead, the shared memory object will be garbage collected when the last reference to
+    the shared memory object is removed. ... */
+  close(mem_fd_imgbuf);
  }
 
  printf("normal process termination\n");

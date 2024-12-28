@@ -57,6 +57,7 @@ typedef struct aux_egl_ctx {
  int          gl_compute_work_grp_cnt[3];
  int          gl_compute_work_grp_siz[3];
  int          gl_compute_work_grp_inv;
+ uint8_t      pad[4];
 }aux_egl_ctx;
 
 /* ***************************************************************8 */
