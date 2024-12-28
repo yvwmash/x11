@@ -1,6 +1,8 @@
 # to search for dependencies
 #     (apt search)|(pkg search) <pattern>
 #     example: pkg search xcb-util-*
+# to see optimization reports, research into
+#     https://clang.llvm.org/docs/UsersManual.html#options-to-emit-optimization-reports
 
 CC     = clang19
 CXX    = clang++19
@@ -74,9 +76,9 @@ CPU_COMPUTE0    = cpu_compute0
 INC  !=  pkgconf --cflags xcb xcb-keysyms xcb-errors xcb-image
 
 LIBS_DY_XCB  != pkgconf --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr
-LIBS_DY_DRM  != pkgconf --libs  libdrm
-LIBS_DY_EGL  != pkgconf --libs  egl glu
-LIBS_DY_GL   != pkgconf --libs  gl glu
+LIBS_DY_DRM  != pkgconf --libs libdrm
+LIBS_DY_EGL  != pkgconf --libs egl glu
+LIBS_DY_GL   != pkgconf --libs gl glu
 LIBS_DY_CV   != pkgconf --libs opencv4 json-c
 LIBS_DY_CPU0 != pkgconf --libs json-c
 
@@ -132,7 +134,7 @@ bin/img2poly: $(OBJ_OPENCV) $(OBJ_VG)
 	$(CXX) $(SFLAGS) $(OBJ_VG) $(OBJ_OPENCV) -o ./bin/img2poly $(LIBS_DY_CV)
 
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
-	$(CXX) $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
+	$(CXX) -fopenmp $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
 # object files, "main" files
 ./build/prob_xcb.o: prob_xcb.c $(DEPS)

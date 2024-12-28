@@ -16,6 +16,10 @@ extern "C" {
 #include <sys/event.h>
 }
 
+extern "C" {
+#include <omp.h>
+}
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
 #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
@@ -33,8 +37,6 @@ extern "C" {
 #include "aux_egl.h"
 #include "aux_gl.h"
 }
-
-#include <omp.h>
 
 #include "vg_algebra/geometry.h"
 
