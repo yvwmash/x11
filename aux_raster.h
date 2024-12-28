@@ -38,80 +38,66 @@ typedef struct aux_raster_buf {
 #define AUX_RASTER_INVERT_Y_AXIS 1
 
 /* */
-int aux_raster_putpix(int              x,
-                      int              y,
+int aux_raster_putpix(uint32_t         x,
+                      uint32_t         y,
                       uint32_t         color,
                       aux_raster_buf  *pixels);
 
 /* */
-uint32_t aux_raster_getpix(int              x,
-                           int              y,
+uint32_t aux_raster_getpix(uint32_t         x,
+                           uint32_t         y,
                            aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_line(int              x0,
-                    int              y0,
-                    int              x1,
-                    int              y1,
-                    uint32_t         color,
-                    aux_raster_buf  *pixels);
-
-/* */
-int aux_raster_line_h(int              x,
-                      int              y,
-                      int              w,
+int aux_raster_line_h(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         w,
                       uint32_t         color,
                       aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_line_v(int              x,
-                      int              y,
-                      int              h,
+int aux_raster_line_v(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         h,
                       uint32_t         color,
                       aux_raster_buf  *pixels);
 
 /* */
-int aux_raster_fill_rc(int              x0, int y0,
-                       int              w,  int h,
+int aux_raster_fill_rc(uint32_t         x0, uint32_t y0,
+                       uint32_t         w,  uint32_t h,
                        uint32_t         color,
                        aux_raster_buf  *aux_buf);
 
 /* */
-int aux_raster_circle(int              x,
-                      int              y,
-                      int              r,
+int aux_raster_circle(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         r,
                       uint32_t         color,
 					  aux_raster_buf  *pixels);
 
-/* */
-int aux_raster_ellipse_rc(int              x0,
-                          int              y0,
-                          int              x1,
-                          int              y1,
-                          uint32_t         color,
-					      aux_raster_buf  *pixels);
-
-/* */
-int aux_raster_bezier_q(int              x0,
-                        int              y0,
-                        int              x1,
-                        int              y1,
-                        int              x2,
-                        int              y2,
+/*
+int aux_raster_bezier_q(uint32_t         x0,
+                        uint32_t         y0,
+                        uint32_t         x1,
+                        uint32_t         y1,
+                        uint32_t         x2,
+                        uint32_t         y2,
                         uint32_t         color,
 					    aux_raster_buf  *pixels);
+*/
 
-/* */
-int aux_raster_bezier_c(int              x0,
-                        int              y0,
-                        int              x1,
-                        int              y1,
-                        int              x2,
-                        int              y2,
-                        int              x3,
-                        int              y3,
+/*
+int aux_raster_bezier_c(uint32_t         x0,
+                        uint32_t         y0,
+                        uint32_t         x1,
+                        uint32_t         y1,
+                        uint32_t         x2,
+                        uint32_t         y2,
+                        uint32_t         x3,
+                        uint32_t         y3,
                         uint32_t         color,
 					    aux_raster_buf  *pixels);
+*/
 
 /* */
 int fill_rbuf(uint32_t color, aux_raster_buf  *pixels);

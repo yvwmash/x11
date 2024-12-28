@@ -7,121 +7,56 @@
 #include "aux_raster.h"
 
 /* */
-int aux_raster_putpix(int              x,
-                      int              y, 
-                      uint32_t         color, 
+int aux_raster_putpix(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         color,
                       aux_raster_buf  *pixels)
 {
- uint32_t *p = (uint32_t*)pixels->buf;
- 
 #if AUX_RASTER_INVERT_Y_AXIS == 1
  y = pixels->h - y;
 #endif
 
-  x = (x < pixels->w)? x : pixels->w - 1;
-  y = (y < pixels->h)? y : pixels->h - 1;
+ if(!(x < pixels->w)) {
+  return 0;
+ }
+ if(!(y < pixels->h)) {
+  return 0;
+ }
 
-  p += y * pixels->w + x;
- *p  = color;
+ ((uint32_t*)(pixels->buf))[y * pixels->w + x] = color;
 
  return 0;
 }
 
 /* */
-uint32_t aux_raster_getpix(int              x,
-                           int              y,
+uint32_t aux_raster_getpix(uint32_t         x,
+                           uint32_t         y,
                            aux_raster_buf  *pixels)
 {
- uint32_t *p = (uint32_t*)pixels->buf;
-
 #if AUX_RASTER_INVERT_Y_AXIS == 1
  y = pixels->h - y;
 #endif
 
-  x = (x < pixels->w)? x : pixels->w - 1;
-  y = (y < pixels->h)? y : pixels->h - 1;
+ if(!(x < pixels->w)) {
+  return 0;
+ }
+ if(!(y < pixels->h)) {
+  return 0;
+ }
 
-  p += y * pixels->w + x;
-
- return *p;
-}
-
-
-/* */
-int aux_raster_line(int              x0,
-                    int              y0, 
-                    int              x1, 
-                    int              y1, 
-                    uint32_t         color, 
-                    aux_raster_buf  *pixels)
-{
-    int dx = x1 - x0;
-    // if x1 == x2, then it does not matter what we set here
-    int ix = ((dx > 0) - (dx < 0));
-
-    dx = abs(dx) << 1;
-
-    int dy = y1 - y0;
-    // if y1 == y2, then it does not matter what we set here
-    int iy = ((dy > 0) - (dy < 0));
-    dy = abs(dy) << 1;
-
-    aux_raster_putpix(x0, y0, color, pixels);
-
-    if (dx >= dy)
-    {
-        // error may go below zero
-        int error = (dy - (dx >> 1));
-
-        while (x0 != x1)
-        {
-            if ((error >= 0) && (error || (ix > 0)))
-            {
-                error -= dx;
-                y0 += iy;
-            }
-            // else do nothing
-
-            error += dy;
-            x0 += ix;
-
-            aux_raster_putpix(x0, y0, color, pixels);
-        }
-    }
-    else
-    {
-        // error may go below zero
-        int error = (dx - (dy >> 1));
-
-        while (y0 != y1)
-        {
-            if ((error >= 0) && (error || (iy > 0)))
-            {
-                error -= dy;
-                x0 += ix;
-            }
-            // else do nothing
-
-            error += dx;
-            y0 += iy;
-
-            aux_raster_putpix(x0, y0, color, pixels);
-        }
-    }
-
- return 0;
+ return ((uint32_t*)(pixels->buf))[y * pixels->w + x];
 }
 
 /* */
-int aux_raster_line_h(int              x, 
-                      int              y, 
-                      int              w, 
-                      uint32_t         color, 
+int aux_raster_line_h(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         w,
+                      uint32_t         color,
                       aux_raster_buf  *pixels)
 {
- int dst_x = x + w + 1;
+ uint32_t dst_x = (x + w + 1) < pixels->w ? (x + w + 1) : pixels->w;
 
- for(; x < dst_x; ++x){
+ for(; x < dst_x; ++x) {
   aux_raster_putpix(x, y, color, pixels);
  }
 
@@ -129,13 +64,13 @@ int aux_raster_line_h(int              x,
 }
 
 /* */
-int aux_raster_line_v(int              x, 
-                      int              y, 
-                      int              h, 
-                      uint32_t         color, 
+int aux_raster_line_v(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         h,
+                      uint32_t         color,
                       aux_raster_buf  *pixels)
 {
- int dst_y = y + h + 1;
+ uint32_t dst_y = (y + h + 1) < pixels->h ? (y + h + 1) : pixels->h;
 
  for(; y < dst_y; ++y){
   aux_raster_putpix(x, y, color, pixels);
@@ -145,91 +80,57 @@ int aux_raster_line_v(int              x,
 }
 
 /* */
-int aux_raster_fill_rc(int              x0, int  y0,
-                       int              w,  int  h,
+int aux_raster_fill_rc(uint32_t         x0, uint32_t y0,
+                       uint32_t         w,  uint32_t h,
                        uint32_t         color,
-                       aux_raster_buf  *pixels)
+                       aux_raster_buf  *aux_buf)
 {
- int dst_x = x0 + w + 1;
- int dst_y = y0 + h + 1;
+ uint32_t dst_x = (x0 + w + 1) < aux_buf->w ? (x0 + w + 1) : aux_buf->w;
+ uint32_t dst_y = (y0 + h + 1) < aux_buf->h ? (y0 + h + 1) : aux_buf->h;
 
- for(; x0 < dst_x; ++x0){
-  for(int y = y0; y < dst_y; ++y){
-   aux_raster_putpix(x0, y, color, pixels);
+ for(; x0 < dst_x; ++x0) {
+  for(; y0 < dst_y; ++y0) {
+   aux_raster_putpix(x0, y0, color, aux_buf);
   }
  }
 
  return 0;
 }
 
-/* plot ellipse inside a specified rectangle 
- *
- */
-int aux_raster_ellipse_rc(int              x0, 
-                          int              y0, 
-                          int              x1, 
-                          int              y1,
-                          uint32_t         color,
-					      aux_raster_buf  *pixels)
+/* */
+int aux_raster_circle(uint32_t         x,
+                      uint32_t         y,
+                      uint32_t         r,
+                      uint32_t         color,
+					  aux_raster_buf  *pixels)
 {
-   int a = abs(x1-x0), b = abs(y1-y0), b1 = b&1; /* values of diameter */
-   long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a; /* error increment */
-   long err = dx+dy+b1*a*a, e2; /* error of 1.step */
+ uint32_t sx = (x < r)             ? 0         : x - r;
+ uint32_t sy = (y < r)             ? 0         : y - r;
+ uint32_t ex = (x + r) > pixels->w ? pixels->w : x + r;
+ uint32_t ey = (y + r) > pixels->h ? pixels->h : y + r;
+ uint32_t r2 = r * r;
+ uint32_t y2;
 
-   if (x0 > x1) { x0 = x1; x1 += a; } /* if called with swapped points */
-   if (y0 > y1) y0 = y1; /* .. exchange them */
-   y0 += (b+1)/2; y1 = y0-b1;   /* starting pixel */
-   a *= 8*a; b1 = 8*b*b;
+ for(uint32_t py = sy; py < ey; py += 1) {
+  y2 = py * py;
 
-   do {
-       aux_raster_putpix(x1, y0, color, pixels); /*   I. Quadrant */
-       aux_raster_putpix(x0, y0, color, pixels); /*  II. Quadrant */
-       aux_raster_putpix(x0, y1, color, pixels); /* III. Quadrant */
-       aux_raster_putpix(x1, y1, color, pixels); /*  IV. Quadrant */
-       e2 = 2*err;
-       if (e2 <= dy) { y0++; y1--; err += dy += a; }  /* y step */ 
-       if (e2 >= dx || 2*err > dy) { x0++; x1--; err += dx += b1; } /* x step */
-   } while (x0 <= x1);
-   
-   while (y0-y1 < b) {  /* too early stop of flat ellipses a=1 */
-       aux_raster_putpix(x0-1, y0,   color, pixels); /* -> finish tip of ellipse */
-       aux_raster_putpix(x1+1, y0++, color, pixels); 
-       aux_raster_putpix(x0-1, y1,   color, pixels);
-       aux_raster_putpix(x1+1, y1--, color, pixels); 
+  for(uint32_t px = sx; px < ex; px += 1) {
+   if((px * px + y2) <= r2) {
+    aux_raster_putpix(x + px, y + py, color, pixels);
    }
+  }
+ }
 
  return 0;
 }
 
-int aux_raster_circle(int              x, 
-                      int              y, 
-                      int              r,
-                      uint32_t         color,
-					  aux_raster_buf  *pixels)
-{
- int px = -r, py = 0, err = 2 - 2 * r; /* II. quadrant */
-
- do{
-  aux_raster_putpix(x - px, y + py, color, pixels); /*   I. quadrant */
-  aux_raster_putpix(x - py, y - px, color, pixels); /*  II. quadrant */
-  aux_raster_putpix(x + px, y - py, color, pixels); /* III. quadrant */
-  aux_raster_putpix(x + py, y + px, color, pixels); /*  IV. quadrant */
-  r = err;
-  if (r <= py) /* e_xy + e_y < 0 */
-   err += ++py * 2 + 1;            
-  if (r > px || err > py) /* e_xy + e_x > 0 or no 2nd y-step */
-   err += ++px * 2 + 1; 
- }while(px < 0);
-
- return 0; 
-}
-
-int aux_raster_bezier_q(int              x0, 
-                        int              y0, 
-                        int              x1, 
-                        int              y1,
-                        int              x2,
-                        int              y2,
+/*
+int aux_raster_bezier_q(uint32_t         x0,
+                        uint32_t         y0,
+                        uint32_t         x1,
+                        uint32_t         y1,
+                        uint32_t         x2,
+                        uint32_t         y2,
                         uint32_t         color,
 					    aux_raster_buf  *pixels)
 {
@@ -238,7 +139,7 @@ int aux_raster_bezier_q(int              x0,
  double t = e;
  double x, y, px = x0, py = y0;
 
- for(; t < 1.0 + e; t += e){
+ for(; t < 1.0 + e; t += e) {
   t = (t < 1.0)? t : 1.0;
   a0 = (double)x0 - (double)(x0 - x1) * t;
   b0 = (double)y0 - (double)(y0 - y1) * t;
@@ -253,15 +154,17 @@ int aux_raster_bezier_q(int              x0,
 
  return 0;
 }
+*/
 
-int aux_raster_bezier_c(int              x0, 
-                        int              y0, 
-                        int              x1, 
-                        int              y1,
-                        int              x2,
-                        int              y2,
-                        int              x3,
-                        int              y3,
+/*
+int aux_raster_bezier_c(uint32_t         x0,
+                        uint32_t         y0,
+                        uint32_t         x1,
+                        uint32_t         y1,
+                        uint32_t         x2,
+                        uint32_t         y2,
+                        uint32_t         x3,
+                        uint32_t         y3,
                         uint32_t         color,
 					    aux_raster_buf  *pixels)
 {
@@ -270,7 +173,7 @@ int aux_raster_bezier_c(int              x0,
  double t = e;
  double x, y, px = x0, py = y0;
 
- for(; t < 1.0 + e; t += e){
+ for(; t < 1.0 + e; t += e) {
   a0 = (double)x0 - (double)(x0 - x1) * t;
   b0 = (double)y0 - (double)(y0 - y1) * t;
   a1 = (double)x1 - (double)(x1 - x2) * t;
@@ -290,15 +193,18 @@ int aux_raster_bezier_c(int              x0,
 
  return 0;
 }
+*/
 
 /* */
 int fill_rbuf(uint32_t color, aux_raster_buf  *pixels)
 {
+ uint32_t const * e;
+
  assert((NULL != pixels) && "raster buffer struct pointer is NULL");
  assert((NULL != pixels->buf) && "raster buffer data pointer is NULL");
  assert((32 == pixels->scanline_pad) && "raster buffer padding is not 32 bit");
 
- uint32_t const * const e = (uint32_t*)pixels->buf + pixels->size / 4;
+ e = (uint32_t*)pixels->buf + pixels->size / 4;
 
  for(uint32_t *p = (uint32_t*)pixels->buf; p < e; ++p){
   *p = color;

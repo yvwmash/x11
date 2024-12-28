@@ -232,8 +232,8 @@ int main(int argc, char *argv[])
 
  /* polygons */
  pt2d                    *v_poly_vert = NULL;
- unsigned                *n_poly_vert = NULL;
- unsigned                 n_poly;
+ size_t                  *n_poly_vert = NULL;
+ size_t                   n_poly;
 
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
@@ -387,6 +387,7 @@ int main(int argc, char *argv[])
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#pragma clang diagnostic ignored "-Wunused-variable"
 
   /* return minimum distance between line segment vw and point p */
   auto dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
@@ -434,8 +435,8 @@ int main(int argc, char *argv[])
   assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
 
   pt2d     *vertices = v_poly_vert;
-  unsigned  np       = n_poly;
-  unsigned *npv      = n_poly_vert;
+  size_t    np       = n_poly;
+  size_t   *npv      = n_poly_vert;
 
   double  th     = 3.0 * U;   /* thickness */
   double  th_2   = th * th;   /* thinckness squared */
@@ -529,6 +530,9 @@ l_end_pixel: ;
   u_int      fflags;
   short      filter;
   uintptr_t  id;
+
+  (void)flags;
+  (void)fflags;
 
   n = kevent(kq_fd, NULL, 0, kq_evs, 5, NULL); /* wait, signal aware */
   if(n < 0) { /* error, or cancellation point */
