@@ -1,10 +1,64 @@
 config files used for new system install
 
-1* scite
-	 scite configs and color schemas
+all below is some applications that travel with me from one laptop to another.
+they more-or-less survive transitions from Unix <=> Linux.
+notice the dots before some list elements.
 
-2* .bashrc
-	 bash shell config
+0* jumpapp := A run-or-raise application switcher for any X11 desktop
+	https://github.com/mkropat/jumpapp/blob/master/jumpapp
+	basically you only need the shell script from the repository
+	> su
+	root> cp jumpapp /usr/local/sbin/jumpapp
+	root> chmod 0770 /usr/local/sbin/jumpapp
+	root> exit
 
-3* nanorc
-	 nanorc color schema and keybindings
+
+1* scite := one true text editor.
+	> su
+	root> pkg install scite
+	root> exit
+	# the color schemas:
+	# 	1) cpp.properties for C/C++ 2) others.properties for makefiles
+	# 	adjust to your needs.
+	> su
+	root> chown -R <your_name>:wheel /usr/local/share/scite
+	root> exit
+	> cp ./conf/scite/* /usr/local/share/scite
+	# .SciTEUser.properties is per-user configuration
+	# 	1*   all fonts monospaced
+	#	2*   margin with line numbers
+	#	3*   caret width is 6px, vertical red line, no blinking
+	#	4*   matched and non-matched braces are colored only when you set caret close to the brace.
+	#			can be styled to highlight all non-matched braces. i do not know how.
+	#	5*   CTRL + 'E' jumps between open and close braces
+	#	6*   select-all-words option. mouse double click or just select the word
+	#	7*   find-word also highlights all matched words
+	#	8*   the github specials: <strip.trailing.spaces> option and <ensure.final.line.end> option
+	#		   works on save of the file
+	#	9*   beware of the below flag
+	#	       use.tabs=1
+	#	10* LEFT_ALT and LEFT_SHIFT plus moving the UP, or DOWN arrows,
+	#		selects a block of text that you can indent as a whole.
+	#	11* statusbar at the bottom shows line index and column index
+	> cp ./conf/~.SciTEUser.properties ~/.SciTEUser.properties
+
+2* bash := bash shell configuration script.
+	> su
+	root> pkg install bash
+	root> exit
+	# almost nothing at the time for the bash config
+	> cp ./conf/~.bashrc ~/.bashrc
+
+3* nano := one true terminal text editor.
+	pkg install nano
+	> su
+	root> chown <your_name>:wheel /usr/local/etc/nanorc
+	root> exit
+	# nanorc color schema and keybindings
+	# now the color scheme really does not fit me.
+	> cp ./conf/nanorc /usr/local/etc/
+
+4*  if you missed setting a locale for you system at BSD installation,
+    you should check locale settings in the "/etc/login.conf".
+	for example UA locale is LANG=uk_UA.UTF-8. do not forget to run "cap_mkdb /etc/login.conf" after.
+	if you have a default "C" locale, then, for example, you might have problems with your native language input.

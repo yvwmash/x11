@@ -895,6 +895,8 @@ int aux_xcb_get_extents_window(aux_xcb_ctx *ctx, uint32_t extents[4]) /* l,r,t,b
  uint32_t             *rc     = NULL;
  xcb_generic_event_t  *ev     = NULL;
 
+ memset(extents, 0, 4 * sizeof(uint32_t));
+
  status = xcb_send_client_wm_ev(ctx,                         /* context */
                                 ctx->screen->root,           /* destination */
                                 ctx->atom_wm_frame_win_msg,  /* atom */
