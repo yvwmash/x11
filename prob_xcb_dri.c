@@ -205,6 +205,9 @@ int main(int argc, char *argv[])
  (void)argc;
  (void)argv;
 
+ /* zero xcb context */
+ aux_zero_xcb_ctx(&xcb_ctx);
+
  /* zero DRM context */
  aux_drm_zero_ctx(&drm_ctx);
 
@@ -221,9 +224,6 @@ int main(int argc, char *argv[])
   status = 1;
   goto main_terminate;
  }
-
- /* zero XCB context */
- aux_zero_xcb_ctx(&xcb_ctx);
 
  /* connect XCB, create window */
  if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0){

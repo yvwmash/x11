@@ -237,6 +237,9 @@ int main(int argc, char *argv[])
  size_t                  *n_poly_vert = NULL;
  size_t                   n_poly;
 
+ /* zero xcb context */
+ aux_zero_xcb_ctx(&xcb_ctx);
+
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
 

@@ -17,6 +17,8 @@ int main(int argc, char *argv[])
  (void)argc;
  (void)argv;
 
+ aux_zero_egl_ctx(&egl_ctx);
+
  r = aux_egl_connect(&egl_ctx);
  if((r != 0) && (r != 3)) {
   status = 1;
