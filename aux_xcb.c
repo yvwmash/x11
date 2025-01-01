@@ -1614,7 +1614,7 @@ int aux_xcb_aux_creat_win(aux_xcb_ctx  *xcb_ctx,
  }
 
  { /* request window frames(message) */
-  uint32_t rc[4];
+  uint32_t rc[4] = {0};
 
   if(aux_xcb_get_extents_window(xcb_ctx, rc)){
    return -1;
