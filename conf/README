@@ -10,8 +10,10 @@ notice the dots before some list elements.
 	root> pkg install wmctrl-fork
 	> exit
 
-	https://github.com/mkropat/jumpapp/blob/master/jumpapp
-	basically you only need the shell script from the repository
+	# https://github.com/mkropat/jumpapp/blob/master/jumpapp
+	# basically you only need the shell script from the repository
+	# FreeBSD pgrep do not understands '\b' option.
+	# https://github.com/mkropat/jumpapp/issues/92
 	> su
 	root> cp jumpapp /usr/local/sbin/jumpapp
 	root> chmod 0770 /usr/local/sbin/jumpapp
