@@ -9,6 +9,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+#pragma clang diagnostic ignored "-Wdocumentation"
+
+#include <xcb/dri2.h>
+
+#pragma clang diagnostic pop
+
 #include "aux_xcb.h"
 #include "aux_xcb_keymap.h"
 
@@ -430,6 +438,7 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
 {
  memset(ctx, 0, sizeof(aux_xcb_ctx));
  ctx->fd            = -1;  /* assign (-1) to X11 connection fd to not confuse it with stdin */
+ ctx->drm_fd        = -1;  /* fd for DRM device. assigned iff DRI2, or DRI3 extensions are available */
  ctx->screen_n      = -1;  /* X11 screens start from zero, so assing (-1)                   */
  ctx->pixmap_format = -1;  /* in case xcb pixmaps start from zero                           */
  ctx->win_x         = 0;
@@ -444,6 +453,10 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
 
  /* default out XRandR extension */
  ctx->x11ext_randr        = false;
+
+ /* default out DRI extensions */
+ ctx->x11ext_dri2 = false;
+ ctx->x11ext_dri3 = false;
 }
 
 /* */
@@ -641,6 +654,44 @@ int aux_xcb_connect(aux_xcb_ctx  *ctx,
    printf(" ! aux-xcb: XRandR: event base: %u, error base: %u\n", rep->first_event, rep->first_error);
   }
  }
+
+ /* query for DRI extensions */
+ {
+  xcb_dri2_connect_reply_t *crep = NULL;
+
+  /* query DRI2 version */
+  xcb_dri2_query_version_reply_t  *vrep  = xcb_dri2_query_version_reply(c, xcb_dri2_query_version(c, 2, 0), NULL);
+
+  if (NULL == vrep) {
+   fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   fprintf(stderr, " ! aux-xcb: no X11 DRI2 extension.\n");
+   goto l_end_qdri2;
+  }
+
+  /* check DRI2 support for the window */
+  crep  = xcb_dri2_connect_reply(c, xcb_dri2_connect(c, ctx->screen->root, XCB_DRI2_DRIVER_TYPE_DRI), NULL);
+
+  if (NULL == crep) {
+   fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   fprintf(stderr, " ! aux-xcb: no X11 DRI2 extension.\n");
+   goto l_end_qdri2;
+  }
+
+  /* extension available */
+  ctx->x11ext_dri2 = true;
+
+  printf(" ! aux-xcb: DRI2 version    : %u.%u\n", vrep->major_version, vrep->minor_version);
+  printf(" ! aux-xcb: DRI2 driver name: %.*s\n", xcb_dri2_connect_driver_name_length(crep), xcb_dri2_connect_driver_name(crep));
+  printf(" ! aux-xcb: DRI2 device name: %.*s\n", xcb_dri2_connect_device_name_length(crep), xcb_dri2_connect_device_name(crep));
+l_end_qdri2:
+  if(vrep) {
+   free(vrep);
+  }
+  if(crep) {
+   free(crep);
+  }
+ }
+
  putchar('\n');
 
  return 0;

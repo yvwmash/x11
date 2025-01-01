@@ -64,10 +64,7 @@ typedef struct aux_xcb_ctx {
 
  int                      screen_n;                /* */
  int                      fd;                      /* */
-
- uint32_t                 color_unit_red_mask; /* */
- uint32_t                 color_unit_gre_mask; /* */
- uint32_t                 color_unit_blu_mask; /* */
+ int                      drm_fd;                  /* */
 
  int16_t                  win_x;  /* */
  int16_t                  win_y;  /* */
@@ -75,24 +72,29 @@ typedef struct aux_xcb_ctx {
  uint16_t                 win_h;  /* */
  int                      pixmap_format; /* */
 
- aux_raster_buf           img_raster_buf;          /* */
+ uint32_t                 color_unit_red_mask; /* */
+ uint32_t                 color_unit_gre_mask; /* */
+ uint32_t                 color_unit_blu_mask; /* */
 
- xcb_present_event_t      x11ext_present_eid;
+ xcb_present_event_t      x11ext_present_eid; /* */
+
+ aux_raster_buf           img_raster_buf;          /* */
 
  bool                     x11ext_present;          /* XPresent */
  uint8_t                  x11ext_present_ev_base, x11ext_present_err_base;
  bool                     x11ext_randr;            /* XRandR   */
  uint8_t                  x11ext_randr_ev_base, x11ext_randr_err_base;
- bool                     f_eq_changed;            /* */
+ bool                     f_eq_changed;            /* flag, equipment disposition have changed */
+ bool                     x11ext_dri3;             /* DRI3 */
+ bool                     x11ext_dri2;             /* DRI2 */
 
- bool                     has_input;     /* */
+ bool                     has_input;     /* keyboard, mouse */
 
  volatile bool            f_window_should_close;   /* */
  volatile bool            f_window_expose;         /* */
 
  bool                     kb_keys[256];  /* */
-
- uint8_t                  pad[2]; /* */
+ uint8_t                  pad[4];
 }aux_xcb_ctx;
 
 /* *********************************************************************************** */

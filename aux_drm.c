@@ -433,7 +433,8 @@ int  aux_drm_open_fd(const char *nm, aux_drm_ctx *ctx) {
 
  snprintf(cbuf, 200, "/dev/dri/%s", nm);
 
- fd = open(cbuf, O_RDWR);
+ /* fd = open(cbuf, O_RDWR); */
+ fd = drmOpen("i915", NULL);
  if(fd < 0) {
   fprintf(stderr, " * aux-drm: open(%s): %s", cbuf, strerror(errno));
   return fd;
