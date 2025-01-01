@@ -93,3 +93,4 @@ Debian.
   - if it power-offs and switches to another CRTC.
   
   - if the window is visible on many physical monitors.
+    - xfce4-wm chooses a strategy so, that window receives VBLANKS of a monitor that the window is most part visible on.
