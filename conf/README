@@ -5,6 +5,11 @@ they more-or-less survive transitions from Unix <=> Linux.
 notice the dots before some list elements.
 
 0* jumpapp := A run-or-raise application switcher for any X11 desktop
+	# the script uses wmctrl(Command line tool to interact with an EWMH/NetWM compatible X managers).
+	> su
+	root> pkg install wmctrl-fork
+	> exit
+
 	https://github.com/mkropat/jumpapp/blob/master/jumpapp
 	basically you only need the shell script from the repository
 	> su
