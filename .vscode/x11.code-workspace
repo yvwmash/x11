@@ -5,10 +5,19 @@
 		}
 	],
 	"settings": {
-		  /* Controls the font size in pixels          */
+		  /* controls the font size in pixels          */
 		  /* scale menu elements with <CTRL> + <+>/<-> */
 		  "editor.fontSize"             : 15,
 		  "debug.console.fontSize"      : 15,
 		  "terminal.integrated.fontSize": 15,
+
+		  /* auto-whitespaces is something */
+		  "files.insertFinalNewline"    : true,
+		  "editor.trimAutoWhitespace"   : true,
+		  "files.trimTrailingWhitespace": true, /* what we need */
+
+		  /* */
+		  "editor.autoSurround"       : "never",
+		  "editor.autoClosingBrackets": "never",
 	}
 }
