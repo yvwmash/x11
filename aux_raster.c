@@ -89,8 +89,8 @@ int aux_raster_fill_rc(uint32_t         x0, uint32_t y0,
  uint32_t dst_y = (y0 + h + 1) < aux_buf->h ? (y0 + h + 1) : aux_buf->h;
 
  for(; x0 < dst_x; ++x0) {
-  for(; y0 < dst_y; ++y0) {
-   aux_raster_putpix(x0, y0, color, aux_buf);
+  for(uint32_t row = y0; row < dst_y; ++row) {
+   aux_raster_putpix(x0, row, color, aux_buf);
   }
  }
 

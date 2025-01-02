@@ -147,7 +147,6 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h)
   cookie_present = xcb_present_select_input_checked(c, window, ctx->x11ext_present_eid, mask);
   error_present  = xcb_request_check(c, cookie_present);
   if (error_present) {
-   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
    AUX_XCB_PRINT_X11_ERROR(ctx, error_present)
    ctx->x11ext_present      = false;
    ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
@@ -939,7 +938,9 @@ int aux_xcb_move_window(aux_xcb_ctx *ctx, int x, int y)
                                      );
 }
 
-/* */
+/* extra space around a window that is used for window decorations.
+   not part of the actual client area of the window.
+ */
 int aux_xcb_get_extents_window(aux_xcb_ctx *ctx, uint32_t extents[4]) /* l,r,t,b */
 {
  int                   status = 0;

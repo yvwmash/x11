@@ -124,6 +124,8 @@ int main(int argc, char *argv[])
   }
  }
 
+ printf("win_w: %u, win_h: %u\n", xcb_ctx.win_w, xcb_ctx.win_h);
+
  { /* paint green rect on a window */
    aux_raster_fill_rc(0, 0,
                       xcb_ctx.win_w, xcb_ctx.win_h,
