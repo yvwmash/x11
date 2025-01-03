@@ -60,3 +60,15 @@ sudo ldconfig
 # END switch to clang compiler ###################################################################################
 
 # check https://clang.llvm.org/c_status.html#c2y(C2y implementation status)
+
+#### FreeBSD #####################################################################################################
+
+# some ports require manual build and configuration to support additional features
+# one of those is opencv.
+# to raise a graphical dialog for port configuration use
+> su
+> make config
+> exit
+> su
+> make
+> exit
