@@ -169,9 +169,10 @@ static bool remove_inner_contours(int w, int h, std::vector<std::vector<cv::Poin
  for(unsigned i = 0; i < vnp.size(); ++i) {
   unsigned  save_i = UINT_MAX;
   unsigned  f      = 0;
-  size_t    n      = vnp[i].size();
 
   for(unsigned ii = 0; ii < vnp.size(); ++ii) {
+   size_t  n = vnp[ii].size();
+
    if(i == ii) {
     continue;
    }
@@ -332,10 +333,13 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	int ret = 0;
+
     /* write the JSON data to a file */
     {
      int         fd = open("./out/out0.json", O_CLOEXEC|O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-	 size_t      l;
+	 size_t      l, ntotal = 0;
+	 ssize_t     nwritten = 0;
      const char *s;
 
 	 if(fd < 0) {
@@ -345,7 +349,17 @@ int main(int argc, char** argv) {
 
 	 s = json_object_to_json_string_ext(json_polygons, JSON_C_TO_STRING_PRETTY);
      l = strlen(s);
-     write(fd, s, l);
+     do {
+      nwritten = write(fd, s + ntotal, l);
+      if( nwritten < 0 ) {
+       fprintf(stderr, " * img2poly: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+       perror(" * write: ");
+       ret = 1;
+       break;
+      }
+      ntotal += (size_t)nwritten;
+      l      -= (size_t)nwritten;
+     } while(l > 0);
      close(fd);
 
      // Free JSON objects
@@ -375,8 +389,6 @@ int main(int argc, char** argv) {
 	}
 
 #define RET_POLYGONS_INCONSISTENT 1
-
-	int ret = 0;
 
 	if ( b_inconsistency ) { /* polygon contours same level. some vertices as "in" and some as "out" */
 		ret = RET_POLYGONS_INCONSISTENT;

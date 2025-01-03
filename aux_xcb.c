@@ -201,7 +201,6 @@ int aux_xcb_empty_events(aux_xcb_ctx *ctx)
  do{
   ev = xcb_poll_for_event(ctx->conn);
   if (ev && (ev->response_type == 0)){
-   fprintf(stderr, " * aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
    AUX_XCB_PRINT_X11_ERROR(ctx, (xcb_generic_error_t*)ev)
    free(ev);
    return -1;
