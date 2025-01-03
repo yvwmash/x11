@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -14,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wdocumentation"
 
 #include <xcb/dri2.h>
+#include <xcb/dri3.h>
 
 #pragma clang diagnostic pop
 
@@ -147,6 +149,9 @@ int aux_xcb_creat_window(aux_xcb_ctx *ctx, uint16_t w, uint16_t h)
   cookie_present = xcb_present_select_input_checked(c, window, ctx->x11ext_present_eid, mask);
   error_present  = xcb_request_check(c, cookie_present);
   if (error_present) {
+   if(3 == error_present->minor_code) { /* SelectInput */
+    fprintf(stderr, " * aux-xcb: XPresent X11 extension does not support SelectInput(by design).\n");
+   }
    AUX_XCB_PRINT_X11_ERROR(ctx, error_present)
    ctx->x11ext_present      = false;
    ctx->x11ext_present_eid  = (xcb_present_event_t)-1;
@@ -437,7 +442,7 @@ void aux_zero_xcb_ctx(aux_xcb_ctx *ctx)
 {
  memset(ctx, 0, sizeof(aux_xcb_ctx));
  ctx->fd            = -1;  /* assign (-1) to X11 connection fd to not confuse it with stdin */
- ctx->drm_fd        = -1;  /* fd for DRM device. assigned iff DRI2, or DRI3 extensions are available */
+ ctx->drm_fd        = -1;  /* fd for DRM device. assigned iff DRI3 extension  is available  */
  ctx->screen_n      = -1;  /* X11 screens start from zero, so assing (-1)                   */
  ctx->pixmap_format = -1;  /* in case xcb pixmaps start from zero                           */
  ctx->win_x         = 0;
@@ -654,7 +659,7 @@ int aux_xcb_connect(aux_xcb_ctx  *ctx,
   }
  }
 
- /* query for DRI extensions */
+ /* query for DRI2 extension */
  {
   xcb_dri2_connect_reply_t *crep = NULL;
 
@@ -667,7 +672,7 @@ int aux_xcb_connect(aux_xcb_ctx  *ctx,
    goto l_end_qdri2;
   }
 
-  /* check DRI2 support for the window */
+  /* check DRI2 support for the screen */
   crep  = xcb_dri2_connect_reply(c, xcb_dri2_connect(c, ctx->screen->root, XCB_DRI2_DRIVER_TYPE_DRI), NULL);
 
   if (NULL == crep) {
@@ -688,6 +693,78 @@ l_end_qdri2:
   }
   if(crep) {
    free(crep);
+  }
+ }
+
+ /* query for DRI3 extension */
+ {
+  /* check if the DRI3 extension is present */
+  const struct xcb_query_extension_reply_t *erep = xcb_get_extension_data(c, &xcb_dri3_id);
+  xcb_dri3_query_version_reply_t           *vrep = NULL;
+  xcb_dri3_open_reply_t                    *rep  = NULL;
+  xcb_generic_error_t                      *e    = NULL;
+  int                                      *pfd  = NULL; /* pointer to fd(s) returned with xcb_dri3_open */
+  xcb_dri3_open_cookie_t                    ckie;
+  struct kinfo_file                         ki_fd;
+
+  if ((NULL == erep) || (0 == erep->present)) {
+   fprintf(stderr, " ! aux-xcb: %s:%s:%d\n", __FILE__, __func__, __LINE__);
+   fprintf(stderr, " ! aux-xcb: no X11 DRI3 extension.\n");
+   goto l_end_qdri3;
+  }
+
+  /* targeting DRI3 v1.4 */
+  vrep = xcb_dri3_query_version_reply(c, xcb_dri3_query_version(c, 1, 4), &e);
+  if(NULL == vrep) {
+   if(e) {
+    AUX_XCB_PRINT_X11_ERROR(ctx, e)
+   }
+   goto l_end_qdri3;
+  }
+
+  printf(" ! aux-xcb: DRI3 server version: %u.%u\n", vrep->major_version, vrep->minor_version);
+
+  /* third argument is a provider XID. it can be queried with a means of RandR X11 extension.
+     one provider can encapsulate many nodes, or resources. therefore reply could return multiple fds.
+     zero - is for default provider.
+     NB: wheel group should be enough to access DRM. i had no need to add any user to a video group.
+	     on my system the DRM fd returned '/dev/drm/0' as a pathname.
+  */
+  ckie = xcb_dri3_open(c, ctx->screen->root, 0);
+  rep  = xcb_dri3_open_reply(c, ckie, &e);
+  if (NULL == rep) {
+   if (e) {
+    AUX_XCB_PRINT_X11_ERROR(ctx, e)
+   }
+   goto l_end_qdri3;
+  }
+
+  pfd = xcb_dri3_open_reply_fds(c, rep);
+  for (uint8_t i = 0; i < rep->nfd; ++i) {
+   int                fd = pfd[i];
+
+   ki_fd.kf_structsize = sizeof(struct kinfo_file);
+   fcntl(fd, F_KINFO, &ki_fd);
+   printf(" ! aux-xcb: DRI3, fd[%hhu], pathname: %s", i, ki_fd.kf_path);
+  }
+  putchar('\n');
+
+  if(rep->nfd > 0) {
+   ctx->drm_fd      = pfd[0];
+   ctx->x11ext_dri3 = true;
+  } else {
+   printf(" ! aux-xcb: no file descriptors opened for DRI3 X11 extension.");
+  }
+
+l_end_qdri3:
+  if(rep) {
+   free(rep);
+  }
+  if(vrep) {
+   free(vrep);
+  }
+  if(e) {
+   free(e);
   }
  }
 
@@ -713,6 +790,11 @@ int aux_xcb_disconnect(aux_xcb_ctx *ctx)
 
  /* destroy window, if any */
  aux_xcb_destroy_window(ctx);
+
+ /* close DRM fd */
+ if(ctx->drm_fd != -1) {
+  close(ctx->drm_fd);
+ }
 
  /* free X11 connection
   * SO: Do I need to disconnect an xcb_connection_t that I got from XGetXCBConnection?

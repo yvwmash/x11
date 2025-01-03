@@ -155,6 +155,7 @@ typedef struct aux_xcb_ctx {
 	   fprintf(stderr, " * \textension : %s\n", extension?extension:"no extension");  \
 	   fprintf(stderr, " * \tmaj       : %s\n", e_nm_maj?e_nm_maj:"no major code");   \
 	   fprintf(stderr, " * \tmin       : %s\n", e_nm_min?e_nm_min:"no minor code");   \
+       fputc('\n', stderr); \
     }while(0);
 
 /* *********************************************************************************** */
