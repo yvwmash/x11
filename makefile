@@ -75,7 +75,7 @@ CPU_COMPUTE0    = cpu_compute0
 
 INC  !=  pkgconf --cflags xcb xcb-keysyms xcb-errors xcb-image
 
-LIBS_DY_XCB  != pkgconf --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr xcb-dri2
+LIBS_DY_XCB  != pkgconf --libs x11 x11-xcb xcb-present xcb xcb-keysyms xcb-errors xcb-image xcb-randr xcb-dri2 xcb-dri3
 LIBS_DY_DRM  != pkgconf --libs libdrm
 LIBS_DY_EGL  != pkgconf --libs egl glu
 LIBS_DY_GL   != pkgconf --libs gl glu

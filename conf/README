@@ -44,8 +44,9 @@ notice the dots before some list elements.
 	#		   works on save of the file
 	#	9*   beware of the below flag
 	#	       use.tabs=1
-	#	10* LEFT_ALT and LEFT_SHIFT plus moving the UP, or DOWN arrows,
+	#	10* <LEFT_ALT> and <LEFT_SHIFT> plus moving the UP, or DOWN arrows,
 	#		selects a block of text that you can indent as a whole.
+	#       i did not find a scite property to change the key combo.
 	#	11* statusbar at the bottom shows line index and column index
 	> cp ./conf/~.SciTEUser.properties ~/.SciTEUser.properties
 
