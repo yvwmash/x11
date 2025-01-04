@@ -16,10 +16,6 @@ extern "C" {
 #include <sys/event.h>
 }
 
-extern "C" {
-#include <omp.h>
-}
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
 #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
@@ -39,6 +35,48 @@ extern "C" {
 }
 
 #include "vg_algebra/geometry.h"
+
+/* C++, OpenCV */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
+#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+#pragma clang diagnostic ignored "-Wcast-align"
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#pragma clang diagnostic ignored "-Wweak-vtables"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-dtor"
+#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+#pragma clang diagnostic ignored "-Wsuggest-destructor-override"
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+#pragma clang diagnostic ignored "-Wswitch-default"
+#pragma clang diagnostic ignored "-Wswitch-enum"
+#pragma clang diagnostic ignored "-Wextra-semi"
+#pragma clang diagnostic ignored "-Wdeprecated-anon-enum-enum-conversion"
+#pragma clang diagnostic ignored "-Wnewline-eof"
+#pragma clang diagnostic ignored "-Wdocumentation-unknown-command" /*  */
+#pragma clang diagnostic ignored "-Wfloat-conversion" /* C style casts, all legal */
+#pragma clang diagnostic ignored "-Wimplicit-float-conversion"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wexit-time-destructors" /* warning: declaration requires an exit-time destructor => static cv::Mutex mutex; */
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast" /* yes they do know their trade */
+#pragma clang diagnostic ignored "-Wimplicit-int-float-conversion" /* hope they know their trade */
+#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
+#pragma clang diagnostic ignored "-Wshadow-field" /* thats unfortunate :p */
+#pragma clang diagnostic ignored "-Wc11-extensions" /* warning: '_Atomic' is a C11 extension [-Wc11-extensions] */
+#pragma clang diagnostic ignored "-Wcast-qual" /* drop constness, perfectly OK for C style */
+#pragma clang diagnostic ignored "-Wpadded" /* struct padding, OK */
+#pragma clang diagnostic ignored "-Wfloat-equal" /* all case are safe to a degree. still better use epsilons */
+#pragma clang diagnostic ignored "-Wsign-conversion" /* no explicit conversion */
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage" /* hundredth of it. isn't the "p + off" is a normal way to access memory in C/C++? */
+
+#include <opencv2/opencv.hpp>
+
+#pragma clang diagnostic pop
 
 extern "C" {
 #include "aux_xcb.h"

@@ -80,7 +80,7 @@ LIBS_DY_DRM  != pkgconf --libs libdrm
 LIBS_DY_EGL  != pkgconf --libs egl glu
 LIBS_DY_GL   != pkgconf --libs gl glu
 LIBS_DY_CV   != pkgconf --libs opencv4 json-c
-LIBS_DY_CPU0 != pkgconf --libs json-c
+LIBS_DY_CPU0 != pkgconf --libs json-c opencv4
 
 INL_SRC =
 BIN  = bin/$(XCB_PROB)\
@@ -134,7 +134,7 @@ bin/img2poly: $(OBJ_OPENCV) $(OBJ_VG)
 	$(CXX) $(SFLAGS) $(OBJ_VG) $(OBJ_OPENCV) -o ./bin/img2poly $(LIBS_DY_CV)
 
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
-	$(CXX) $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
+	$(CXX) $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
 # object files, "main" files
 ./build/prob_xcb.o: prob_xcb.c $(DEPS)
@@ -150,7 +150,7 @@ bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
 	$(CXX) $(PFLAGS) $(INC) -c opencv_image2poly.cpp -o ./build/opencv_image2poly.o  $(CXXFLAGS) $(CFLAGS_OPENCV)
 
 ./build/cpu_compute0.o: cpu_compute0.cpp $(DEPS)
-	$(CXX) $(PFLAGS) $(INC) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CFLAGS_CPU0) $(CXXFLAGS)
+	$(CXX) $(PFLAGS) $(INC) $(CFLAGS_OPENCV) -c cpu_compute0.cpp -o ./build/cpu_compute0.o  $(CFLAGS_DRM) $(CFLAGS_CPU0) $(CXXFLAGS)
 
 # object files, supplementary
 ./build/aux_xcb.o: aux_xcb.c $(DEPS)
