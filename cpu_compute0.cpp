@@ -69,6 +69,40 @@ static          bool f_display_change   = false; /* */
 
 /* ============================================================================================== */
 
+struct polygon_aabb {
+ pt2d min;
+ pt2d max;
+};
+
+/* ============================================================================================== */
+
+/* ************************************************************************* */
+
+static int compute_polygons_aabb(const std::vector<std::vector<pt2d>> &polygons, std::vector<polygon_aabb> &out) {
+ out.reserve(polygons.size());
+
+ for(auto &vertices : polygons) {
+  double            min_x =  DBL_MAX;
+  double            min_y =  DBL_MAX;
+  double            max_x = -DBL_MAX;
+  double            max_y = -DBL_MAX;
+  polygon_aabb      aabb;
+
+  for(auto &p : vertices) {
+   if (p.x < min_x) min_x = p.x;
+   if (p.y < min_y) min_y = p.y;
+   if (p.x > max_x) max_x = p.x;
+   if (p.y > max_y) max_y = p.y;
+  }
+
+  aabb.min = {min_x, min_y};
+  aabb.max = {max_x, max_y};
+  out.emplace_back(aabb);
+ }
+
+ return 0;
+}
+
 /* ************************************************************************* */
 
 static int filter_signals(int kq_fd, sigset_t *mask_save) {
@@ -217,7 +251,7 @@ int main(int argc, char *argv[])
 
  int                      status = 0;
  int                      on = 1;
- int                      kq_fd = -1, x11_fd = -1, dri_fd = -1, mem_fd_imgbuf = -1;
+ int                      kq_fd = -1, x11_fd = -1, drm_fd = -1, mem_fd_imgbuf = -1;
  sigset_t                 mask_osigs = {0};
  struct kevent            kq_evs[5];
  aux_xcb_ctx              xcb_ctx;
@@ -225,6 +259,8 @@ int main(int argc, char *argv[])
 
  /* polygons */
  std::vector<std::vector<pt2d>> polygons;
+ /* polygons AABB */
+ std::vector<polygon_aabb>      polygons_aabb;
 
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -232,25 +268,23 @@ int main(int argc, char *argv[])
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
 
- /* open DRM fd */
- dri_fd = aux_drm_open_fd("card0", &drm_ctx);
- if(dri_fd < 0) {
+ /* connect XCB, create window */
+ if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0){
+  status = 1;
+  goto main_terminate;
+ }
+
+ /* assign DRM fd */
+ drm_fd     = xcb_ctx.drm_fd;
+ drm_ctx.fd = drm_fd;
+ if(drm_fd < 0) {
   status = 1;
   goto main_terminate;
  }
 
  /* set DRM fd to non-blocking mode */
- if(ioctl(dri_fd, FIONBIO, (char *)&on) < 0){
+ if(ioctl(drm_fd, FIONBIO, (char *)&on) < 0){
   perror(" * ioctl(dri_fd, FIONBIO)");
-  status = 1;
-  goto main_terminate;
- }
-
- /* zero xcb context */
- aux_zero_xcb_ctx(&xcb_ctx);
-
- /* connect XCB, create window */
- if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0){
   status = 1;
   goto main_terminate;
  }
@@ -336,7 +370,7 @@ int main(int argc, char *argv[])
  {
   struct kevent ev;
 
-  EV_SET(&ev, dri_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+  EV_SET(&ev, drm_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
   if(kevent(kq_fd, &ev, 1, NULL, 0,	NULL) < 0) {
    perror(" * kqueue()");
    status = 1;
@@ -426,8 +460,8 @@ int main(int argc, char *argv[])
   double  lim_2  = lim * lim; /* limit squared */
   double  r_2    = R * R;     /* vertex circle radius squared */
   /* colors */
-  vec3d   c_v    = vec3d(0.0, 0.0, 1.0); /* RGB */
-  vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB */
+  vec3d   c_v    = vec3d(0.0, 0.0, 1.0); /* RGB, BLUE  */
+  vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB, WHITE */
   vec3d   dst_c;
   vec3d   src_c;
   vec4d   fout_c;
@@ -447,6 +481,16 @@ int main(int argc, char *argv[])
   out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
 
+  /* polygons AABB         */
+  compute_polygons_aabb(polygons, polygons_aabb);
+  /* enlarge polygons AABB */
+  for(auto &aabb : polygons_aabb) {
+   aabb.min.x = std::clamp(aabb.min.x - lim, -1.0, 1.0);
+   aabb.min.y = std::clamp(aabb.min.y - lim, -1.0, 1.0);
+   aabb.max.x = std::clamp(aabb.max.x + lim, -1.0, 1.0);
+   aabb.max.y = std::clamp(aabb.max.y + lim, -1.0, 1.0);
+  }
+
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
@@ -454,27 +498,50 @@ int main(int argc, char *argv[])
     pt2d      p   = {x,y};
     pt2d      v0, v1;
     double    d2;
-    double    t;
+    double    t = 0.0; /* pure dst color */
+    bool      inside_polygon_aabb = false;
+    size_t    poly_idx = 0;
+	std::vector<pt2d> *pvertices;
 
+    /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
-	t = 1e18;
 
+    /* vertex */
 	for(auto &vertices : polygons) { /* all polygons */
-     for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) { /* vertices */
-      v0 = vertices[vi    ];
-      v1 = vertices[vi + 1];
-      d2 = distance_sq(p, v0);
-
+     for(auto &v : vertices) { /* vertices */
+	  d2 = distance_sq(p, v);
       if(d2 < r_2) { /* its a vertex pixel */
        src_c = c_v;
-       t     = 1.0; /* pure color */
+       t     = 1.0; /* pure src color */
        goto l_mix_colour;
       }
-
-      /* minimum distance to *all* polygon segments */
-       d2 = sq_dist_segment(p, v0, v1);
-       t  = std::min(t, d2);
      }
+    }
+
+    /* is pixel inside of polygon AABB? */
+    for(size_t bi = 0; bi < polygons_aabb.size(); bi += 1) {
+     auto &aabb = polygons_aabb[bi];
+
+     if( (x > aabb.min.x) && (x < aabb.max.x) && (y > aabb.min.y) && (y < aabb.max.y) ) {
+      inside_polygon_aabb = true;
+      poly_idx            = bi;
+      break;
+     }
+    }
+    if(false == inside_polygon_aabb) {
+     goto l_end_pixel;
+    }
+
+    /* point is inside of polygon AABB */
+	t         = 1e18;
+    pvertices = &polygons[poly_idx];
+    for(size_t vi = 0; vi < (pvertices->size() - 1); vi += 1) {
+     v0 = (*pvertices)[vi];
+     v1 = (*pvertices)[vi + 1];
+
+     /* minimum distance to *all* polygon segments */
+     d2 = sq_dist_segment(p, v0, v1);
+     t  = std::min(t, d2);
     }
 
     if(t > lim_2) { /* squared distance out of range */
@@ -563,7 +630,7 @@ l_end_pixel: ;
     aux_xcb_ev_func(&xcb_ctx);
     f_win_close  = xcb_ctx.f_window_should_close;
     f_win_expose = xcb_ctx.f_window_expose;
-   }else if((int)id == dri_fd) { /* DRM event */
+   }else if((int)id == drm_fd) { /* DRM event */
 	struct  aux_drm_event_crtc_sq  vev[4];
     ssize_t                        nread;
 
@@ -609,8 +676,8 @@ main_terminate:
   perror(" * sigprocmask(SIG_SETMASK, &mask_osigs, NULL)");
   status = 1;
  }
- if(dri_fd > 0) {
-  close(dri_fd);
+ if(drm_fd > 0) {
+  close(drm_fd);
   aux_drm_destroy_ctx(&drm_ctx);
  }
  if(kq_fd != -1) {

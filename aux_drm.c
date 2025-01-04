@@ -22,12 +22,19 @@
 
 /* *********************************************************************************** */
 
-/* */
+/* drmAvailable checks for file in /dev/dri/<link-to-cdevice>.
+   if the function gets insufficient permissions on minor DRM device, it returns failure.
+   have to comment out the check, because the DRM fd is obtained with a help of DRI3 X11 extension.
+   and X11 will have the permissions, it do manage presentation with a help of DRM.
+   if you **really** computing something, you already in a video group and have a bunch of GPU nodes.
+ */
 static bool  drm_available() {
+ /*
  if(drmAvailable() == 0) {
   fprintf(stderr, " ! aux-drm: no DRM available\n");
   return false;
  }
+ */
  return true;
 }
 
