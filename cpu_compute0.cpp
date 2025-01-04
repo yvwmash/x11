@@ -107,39 +107,7 @@ static          bool f_display_change   = false; /* */
 
 /* ============================================================================================== */
 
-struct polygon_aabb {
- pt2d min;
- pt2d max;
-};
-
 /* ============================================================================================== */
-
-/* ************************************************************************* */
-
-static int compute_polygons_aabb(const std::vector<std::vector<pt2d>> &polygons, std::vector<polygon_aabb> &out) {
- out.reserve(polygons.size());
-
- for(auto &vertices : polygons) {
-  double            min_x =  DBL_MAX;
-  double            min_y =  DBL_MAX;
-  double            max_x = -DBL_MAX;
-  double            max_y = -DBL_MAX;
-  polygon_aabb      aabb;
-
-  for(auto &p : vertices) {
-   if (p.x < min_x) min_x = p.x;
-   if (p.y < min_y) min_y = p.y;
-   if (p.x > max_x) max_x = p.x;
-   if (p.y > max_y) max_y = p.y;
-  }
-
-  aabb.min = {min_x, min_y};
-  aabb.max = {max_x, max_y};
-  out.emplace_back(aabb);
- }
-
- return 0;
-}
 
 /* ************************************************************************* */
 
@@ -279,6 +247,36 @@ static unsigned pnpoly(const std::vector<pt2d> &polygon, const pt2d &pt) {
 
 /* ************************************************************************* */
 
+static int convex_hull(const std::vector<pt2d> P, std::vector<pt2d> &chull) {
+ std::vector<cv::Point2f>  cv_points;
+ std::vector<cv::Point2f>  cv_hull;
+
+ cv_points.reserve(P.size());
+
+ /* copy to opencv format */
+ for(auto &p : P) {
+  cv_points.push_back({(float)p.x, (float)p.y});
+ }
+
+ /* compute the convex hull */
+ try {
+  cv::convexHull(cv_points, cv_hull);
+ } catch(const cv::Exception& e) {
+  std::cerr << "Error message: " << e.what() << std::endl;
+  return 1;
+ }
+ chull.reserve(cv_hull.size());
+
+ /* copy points back to 'out' */
+ for(auto &p : cv_hull) {
+  chull.push_back({(double)p.x, (double)p.y});
+ }
+
+ return 0;
+}
+
+/* ************************************************************************* */
+
 /* ============================================================================================== */
 
 /* */
@@ -297,8 +295,8 @@ int main(int argc, char *argv[])
 
  /* polygons */
  std::vector<std::vector<pt2d>> polygons;
- /* polygons AABB */
- std::vector<polygon_aabb>      polygons_aabb;
+ /* polygons convex hulls */
+ std::vector<std::vector<pt2d>> polygons_chulls;
 
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -434,6 +432,20 @@ int main(int argc, char *argv[])
   goto main_terminate;
  }
 
+ /* calculate polygon convex hulls */
+ {
+  polygons_chulls.reserve(polygons.size());
+
+  for(auto &vertices : polygons) {
+   std::vector<pt2d> chull;
+
+   convex_hull(vertices, chull);
+   polygons_chulls.emplace_back(chull);
+  }
+
+
+ }
+
  /* display polygon vertices */
  {
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
@@ -519,16 +531,6 @@ int main(int argc, char *argv[])
   out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
 
-  /* polygons AABB         */
-  compute_polygons_aabb(polygons, polygons_aabb);
-  /* enlarge polygons AABB */
-  for(auto &aabb : polygons_aabb) {
-   aabb.min.x = std::clamp(aabb.min.x - lim, -1.0, 1.0);
-   aabb.min.y = std::clamp(aabb.min.y - lim, -1.0, 1.0);
-   aabb.max.x = std::clamp(aabb.max.x + lim, -1.0, 1.0);
-   aabb.max.y = std::clamp(aabb.max.y + lim, -1.0, 1.0);
-  }
-
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
@@ -537,9 +539,7 @@ int main(int argc, char *argv[])
     pt2d      v0, v1;
     double    d2;
     double    t = 0.0; /* pure dst color */
-    bool      inside_polygon_aabb = false;
-    size_t    poly_idx = 0;
-	std::vector<pt2d> *pvertices;
+    std::vector<std::reference_wrapper<std::vector<pt2d>>> ref_polygons;
 
     /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
@@ -556,30 +556,27 @@ int main(int argc, char *argv[])
      }
     }
 
-    /* is pixel inside of polygon AABB? */
-    for(size_t bi = 0; bi < polygons_aabb.size(); bi += 1) {
-     auto &aabb = polygons_aabb[bi];
-
-     if( (x > aabb.min.x) && (x < aabb.max.x) && (y > aabb.min.y) && (y < aabb.max.y) ) {
-      inside_polygon_aabb = true;
-      poly_idx            = bi;
-      break;
+    /* is pixel inside of polygon chull? */
+    for(size_t pi = 0;  pi <  polygons_chulls.size(); pi += 1) {
+     if( pnpoly(polygons_chulls[pi], p) ) {
+      ref_polygons.push_back(polygons[pi]);
      }
     }
-    if(false == inside_polygon_aabb) {
-     goto l_end_pixel;
+    if(ref_polygons.empty()) {
+     goto l_mix_colour;
     }
 
-    /* point is inside of polygon AABB */
-	t         = 1e18;
-    pvertices = &polygons[poly_idx];
-    for(size_t vi = 0; vi < (pvertices->size() - 1); vi += 1) {
-     v0 = (*pvertices)[vi];
-     v1 = (*pvertices)[vi + 1];
+    /* point is inside at least one of polygons convex hulls */
+	t = 1e18;
+    for(std::vector<pt2d> &vertices : ref_polygons) {
+     for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) {
+      v0 = vertices[vi];
+      v1 = vertices[vi + 1];
 
-     /* minimum distance to *all* polygon segments */
-     d2 = sq_dist_segment(p, v0, v1);
-     t  = std::min(t, d2);
+      /* minimum distance to *all* polygon segments */
+      d2 = sq_dist_segment(p, v0, v1);
+      t  = std::min(t, d2);
+     }
     }
 
     if(t > lim_2) { /* squared distance out of range */
@@ -604,30 +601,6 @@ l_end_pixel: ;
   }
 
  }
-
- //~ /*  */
- //~ {
-  //~ pt2d     *vertices = v_poly_vert;
-  //~ size_t    np       = n_poly;
-  //~ size_t   *npv      = n_poly_vert;
-  //~ unsigned  bf_w     = xcb_ctx.img_raster_buf.w;
-  //~ unsigned  bf_h     = xcb_ctx.img_raster_buf.h;
-  //~ auto     *pbf      = &xcb_ctx.img_raster_buf;
-  //~ double    U        = 2.0 / std::min(bf_w, bf_h);
-
-  //~ for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
-   //~ for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
-    //~ double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
-    //~ double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
-    //~ pt2d      p   = {x,y};
-
-    //~ for(unsigned pi = 0; pi < np; pi += 1) {
-     //~ if(pnpoly()) {
-     //~ }
-    //~ }
-   //~ }
-  //~ }
- //~ }
 
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
