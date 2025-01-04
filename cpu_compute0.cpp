@@ -216,6 +216,26 @@ l_end_read_contours:
  return status;
 }
 
+/* ************************************************************************* */
+
+/* point in polygon test */
+static unsigned pnpoly(size_t nvert, pt2d *va, pt2d pt) {
+ size_t    i, j;
+ unsigned  c = 0;
+
+ for (i = 0, j = nvert - 1; i < nvert; j = i++) {
+  if ( ((va[i].y > pt.y) != (va[j].y > pt.y))
+       && (pt.x < (va[j].x - va[i].x) * (pt.y - va[i].y) / (va[j].y - va[i].y) + va[i].x)
+     )
+  {
+   c = !c;
+  }
+ }
+ return (unsigned)c;
+}
+
+/* ************************************************************************* */
+
 /* ============================================================================================== */
 
 /* */
@@ -476,7 +496,6 @@ int main(int argc, char *argv[])
   printf(" UI  : %08x\n", ui_argb(out_c));
   //~ exit(0);
 
-  #pragma omp parallel num_threads(4)
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
