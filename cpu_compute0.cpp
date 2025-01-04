@@ -159,8 +159,6 @@ l_end_flt_signals:
 
 /* ************************************************************************* */
 
-/* ************************************************************************* */
-
 static int read_contours(const char *fn, std::vector<std::vector<pt2d>> &out) {
  int                 status = 0;
  int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
@@ -277,6 +275,33 @@ static int convex_hull(const std::vector<pt2d> P, std::vector<pt2d> &chull) {
 
 /* ************************************************************************* */
 
+static int centroid(const std::vector<pt2d> P, pt2d &out) {
+ std::vector<cv::Point2f> cv_contour;
+ cv::Moments              cv_m;
+
+ /* copy to opencv format */
+ for(auto &p : P) {
+  cv_contour.push_back({(float)p.x, (float)p.y});
+ }
+
+ try {
+  cv_m = cv::moments(cv_contour);
+ } catch(const cv::Exception& e) {
+  std::cerr << "Error message: " << e.what() << std::endl;
+  return 1;
+ }
+
+ /* calculate the centroid */
+ cv::Point2d c(cv_m.m10 / cv_m.m00, cv_m.m01 / cv_m.m00);
+
+ out.x = c.x;
+ out.y = c.y;
+
+ return 0;
+}
+
+/* ************************************************************************* */
+
 /* ============================================================================================== */
 
 /* */
@@ -293,10 +318,12 @@ int main(int argc, char *argv[])
  aux_xcb_ctx              xcb_ctx;
  aux_drm_ctx              drm_ctx;
 
- /* polygons */
+ /* polygons             */
  std::vector<std::vector<pt2d>> polygons;
- /* polygons convex hulls */
+ /* polygon convex hulls */
  std::vector<std::vector<pt2d>> polygons_chulls;
+ /* polygon centroids */
+ std::vector<pt2d>              polygons_centroid;
 
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -426,26 +453,6 @@ int main(int argc, char *argv[])
   }
  }
 
- /* read polygon contours */
- if(0 != read_contours("./out/out0.json", polygons)) {
-  status = 2;
-  goto main_terminate;
- }
-
- /* calculate polygon convex hulls */
- {
-  polygons_chulls.reserve(polygons.size());
-
-  for(auto &vertices : polygons) {
-   std::vector<pt2d> chull;
-
-   convex_hull(vertices, chull);
-   polygons_chulls.emplace_back(chull);
-  }
-
-
- }
-
  /* display polygon vertices */
  {
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
@@ -515,6 +522,49 @@ int main(int argc, char *argv[])
   vec3d   dst_c;
   vec3d   src_c;
   vec4d   fout_c;
+
+  /* read polygon contours */
+  if(0 != read_contours("./out/out0.json", polygons)) {
+   status = 2;
+   goto main_terminate;
+  }
+
+  /* calculate polygon convex hulls and enlarge em */
+  {
+   /* calculate polygon convex hulls */
+   polygons_chulls.reserve(polygons.size());
+   for(auto &vertices : polygons) {
+    std::vector<pt2d> chull;
+
+    convex_hull(vertices, chull);
+    polygons_chulls.emplace_back(chull);
+   }
+
+   /* calculate polygon centroids */
+   polygons_centroid.reserve(polygons.size());
+   for(auto &vertices : polygons) {
+    pt2d   c;
+
+    centroid(vertices, c);
+    polygons_centroid.emplace_back(c);
+   }
+
+   /* enlarge polygon convex hulls */
+   for(size_t pi = 0; pi < polygons_chulls.size(); pi += 1) {
+	pt2d c = polygons_centroid[pi];
+
+    for(auto &v : polygons_chulls[pi]) {
+     vec2d  vec = v - c; /* vertex - centroid */
+     double len = length(vec);
+     pt2d   p;
+
+     /* extend vector */
+     /* p = c + t * v */
+     p = c + ((len + lim) / len) * vec;
+     v = p; /* new convex hull vertex position */
+    }
+   }
+  }
 
   printf(" ! U   : %f\n", U);
   printf(" ! U2  : %f\n", U * U);
