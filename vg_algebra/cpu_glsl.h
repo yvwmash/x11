@@ -102,53 +102,56 @@ vec4<I> mix(const vec4<I>& a, const vec4<I>& b, I t)
 
 /* */
 template <typename I>
-uint32_t ui_argb(I a, I r, I g, I b){
- return (uint32_t)((uint32_t)((uint8_t)(a * 255.0))   << 24)
-		| (uint32_t)((uint32_t)((uint8_t)(r * 255.0)) << 16)
-        | (uint32_t)((uint32_t)((uint8_t)(g * 255.0)) << 8)
-        | (uint32_t)((uint32_t)((uint8_t)(b * 255.0)) << 0);
+uint32_t ui_argb(I a, I r, I g, I b) {
+ return ((uint32_t)std::clamp(a * 255.0, 0.0, 255.0)   << 24)
+		| ((uint32_t)std::clamp(r * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(g * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(b * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
 template <typename I>
-uint32_t ui_argb(I a, const vec3<I>& v){
- return (uint32_t)((uint32_t)((uint8_t)(a * 255.0))   << 24)
-		| (uint32_t)((uint32_t)((uint8_t)(v.x * 255.0)) << 16)
-        | (uint32_t)((uint32_t)((uint8_t)(v.y * 255.0)) << 8)
-        | (uint32_t)((uint32_t)((uint8_t)(v.z * 255.0)) << 0);
+uint32_t ui_argb(I a, const vec3<I>& v) {
+ return ((uint32_t)std::clamp(a * 255.0, 0.0, 255.0)   << 24)
+		| ((uint32_t)std::clamp(v.x * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(v.y * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(v.z * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
 template <typename I>
-uint32_t ui_argb(const vec4<I>& v){
- return (uint32_t)((uint32_t)((uint8_t)(v.x * 255.0))   << 24)
-		| (uint32_t)((uint32_t)((uint8_t)(v.y * 255.0)) << 16)
-        | (uint32_t)((uint32_t)((uint8_t)(v.z * 255.0)) << 8)
-        | (uint32_t)((uint32_t)((uint8_t)(v.w * 255.0)) << 0);
+uint32_t ui_argb(const vec4<I>& v) {
+ return ((uint32_t)std::clamp(v.x * 255.0, 0.0, 255.0)   << 24)
+		| ((uint32_t)std::clamp(v.y * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(v.z * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(v.w * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
 template <typename I>
-uint32_t ui_rgb(I r, I g, I b){
- return (uint32_t)((uint32_t)((uint8_t)(r * 255.0))   << 16)
-        | (uint32_t)((uint32_t)((uint8_t)(g * 255.0)) << 8)
-        | (uint32_t)(((uint32_t)(uint8_t)(b * 255.0)) << 0);
+uint32_t ui_rgb(I r, I g, I b) {
+ return 0xFF000000 /* a | r | g | b */
+        | ((uint32_t)std::clamp(r * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(g * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(b * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
 template <typename I>
-uint32_t ui_rgb(const vec3<I>& v){
- return (((uint8_t)(v.x * 255.0))   << 16)
-        | (((uint8_t)(v.y * 255.0)) << 8)
-        | (((uint8_t)(v.z * 255.0)) << 0);
+uint32_t ui_rgb(const vec3<I>& v) {
+ return 0xFF000000 /* a | r | g | b */
+        | ((uint32_t)std::clamp(v.x * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(v.y * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(v.z * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
 template <typename I>
 uint32_t ui_rgb(const vec4<I>& v){
- return (((uint8_t)(v.x * 255.0))   << 16)
-        | (((uint8_t)(v.y * 255.0)) << 8)
-        | (((uint8_t)(v.z * 255.0)) << 0);
+ return 0xFF000000 /* a | r | g | b */
+        | ((uint32_t)std::clamp(v.x * 255.0, 0.0, 255.0) << 16)
+        | ((uint32_t)std::clamp(v.y * 255.0, 0.0, 255.0) << 8)
+        | ((uint32_t)std::clamp(v.z * 255.0, 0.0, 255.0) << 0);
 }
 
 /* */
