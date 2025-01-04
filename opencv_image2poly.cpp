@@ -132,18 +132,18 @@ static int polygon_winding_order(cv::Mat &image, std::vector<cv::Point> &va)
 /* */
 static unsigned pnpoly(size_t nvert, pt2d *va, pt2d pt)
 {
-  size_t    i, j;
-  unsigned  c = 0;
+ size_t    i, j;
+ unsigned  c = 0;
 
-  for (i = 0, j = nvert - 1; i < nvert; j = i++) {
-    if ( ((va[i].y > pt.y) != (va[j].y > pt.y))
-         && (pt.x < (va[j].x - va[i].x) * (pt.y - va[i].y) / (va[j].y - va[i].y) + va[i].x)
-       )
-    {
-       c = !c;
-    }
+ for (i = 0, j = nvert - 1; i < nvert; j = i++) {
+  if ( ((va[i].y > pt.y) != (va[j].y > pt.y))
+       && (pt.x < (va[j].x - va[i].x) * (pt.y - va[i].y) / (va[j].y - va[i].y) + va[i].x)
+     )
+  {
+   c = !c;
   }
-  return (unsigned)c;
+ }
+ return (unsigned)c;
 }
 
 /* */
