@@ -305,6 +305,7 @@ int main(int argc, char** argv) {
 
     /* create a JSON object to store the contours */
     json_object* json_polygons = json_object_new_array();
+	const bool inv_y_axis = true;
     /* save to JSON */
 	{
 		int          w       = image.cols;
@@ -314,6 +315,10 @@ int main(int argc, char** argv) {
 			double       x     = 2.0 * (pt.x - 0.0) / (w - 0.0) - 1.0; /* map to -1, 1 range */
 			double       y     = 2.0 * (pt.y - 0.0) / (h - 0.0) - 1.0; /* map to -1, 1 range */
 			json_object *point = json_object_new_object();
+
+            if(inv_y_axis) {
+             y = -y;
+            }
 
 			json_object_object_add(point, "x", json_object_new_double(x));
 			json_object_object_add(point, "y", json_object_new_double(y));
