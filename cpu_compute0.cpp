@@ -45,6 +45,9 @@ extern "C" {
 #include "aux_drm.h"
 }
 
+/* C++ */
+#include <vector>
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wold-style-cast"
 
@@ -118,15 +121,11 @@ l_end_flt_signals:
 
 /* ************************************************************************* */
 
-static int read_contours(const char *fn, pt2d **va, size_t *n_p, size_t **n_v) {
+static int read_contours(const char *fn, std::vector<std::vector<pt2d>> &out) {
  int                 status = 0;
  int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
- unsigned            tv = 0;
  struct json_object *parsed_json = NULL;
-
- *va  = NULL;
- *n_p = 0;
- *n_v = NULL;
+ size_t              np;
 
  if (fd < 0) {
   fprintf(stderr, " * open contours file %s\n\t%s\n", fn, strerror(errno));
@@ -144,71 +143,42 @@ static int read_contours(const char *fn, pt2d **va, size_t *n_p, size_t **n_v) {
  }
 
  /* # of polygons */
- *n_p = json_object_array_length(parsed_json);
-
- /* total # of vertices */
- for (unsigned pi = 0; pi < *n_p; ++pi) {
-  struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
-
-  if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
-   fprintf(stderr, " * invalid polygon format at index %u\n", pi);
-   continue;
-  }
-  tv += json_object_array_length(a_poly);
- }
-
-
- /* allocate */
- *n_v = (size_t*)malloc(*n_p * sizeof(size_t));
- if(NULL == *n_v) {
-  status = 3;
-  goto l_end_read_contours;
- }
- *va = (pt2d*)malloc(tv * sizeof(pt2d));
- if(NULL == *va) {
-  status = 3;
-  goto l_end_read_contours;
- }
+ np = json_object_array_length(parsed_json);
+ out.reserve(np); /* reserve # polygons */
 
  /* iterate through polygons */
- tv = 0;
- for (unsigned pi = 0; pi < *n_p; ++pi) {
+ for (unsigned pi = 0; pi < np; pi += 1) {
   struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
   size_t              n;
+  std::vector<pt2d>   vp;
 
   if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
    fprintf(stderr, " * invalid polygon format at index %u\n", pi);
    continue;
   }
 
-  n          = json_object_array_length(a_poly);
-  (*n_v)[pi] = n;
+  /* vertices in a polygon */
+  n = json_object_array_length(a_poly);
+  vp.reserve(n); /* reserve for # vertices */
 
   /* polygon contour */
-  for (unsigned ci = 0; ci < n; ++ci, ++tv) {
+  for (unsigned ci = 0; ci < n; ci += 1) {
    struct json_object *pt = json_object_array_get_idx(a_poly, ci);
    struct json_object *x, *y;
+   pt2d                point;
 
+   /* add a point to polygon */
    if (json_object_object_get_ex(pt, "x", &x) && json_object_object_get_ex(pt, "y", &y)) {
-    *(*va + tv) = {(double)json_object_get_double(x), (double)json_object_get_double(y)};
+    vp.emplace_back((double)json_object_get_double(x), (double)json_object_get_double(y));
    } else {
     fprintf(stderr, " * invalid point format at polygon %u, vertex %u\n", pi, ci);
    }
   }
+
+  out.emplace_back(vp); /* vp will be created anew next iteration */
  }
 
 l_end_read_contours:
- if(0 != status) {
-  if(NULL != *va) {
-   free(*va);
-   *va = NULL;
-  }
-  *n_p = 0;
-  if(NULL != *n_v) {
-   free(*n_v);
-   *n_v = NULL;
-  }
- }
  if(NULL != parsed_json) {
   json_object_put(parsed_json);
  }
@@ -219,13 +189,14 @@ l_end_read_contours:
 /* ************************************************************************* */
 
 /* point in polygon test */
-static unsigned pnpoly(size_t nvert, pt2d *va, pt2d pt) {
+static unsigned pnpoly(const std::vector<pt2d> &polygon, const pt2d &pt) {
  size_t    i, j;
+ size_t    nvert = polygon.size();
  unsigned  c = 0;
 
  for (i = 0, j = nvert - 1; i < nvert; j = i++) {
-  if ( ((va[i].y > pt.y) != (va[j].y > pt.y))
-       && (pt.x < (va[j].x - va[i].x) * (pt.y - va[i].y) / (va[j].y - va[i].y) + va[i].x)
+  if ( ((polygon[i].y > pt.y) != (polygon[j].y > pt.y))
+       && (pt.x < (polygon[j].x - polygon[i].x) * (pt.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)
      )
   {
    c = !c;
@@ -253,9 +224,7 @@ int main(int argc, char *argv[])
  aux_drm_ctx              drm_ctx;
 
  /* polygons */
- pt2d                    *v_poly_vert = NULL;
- size_t                  *n_poly_vert = NULL;
- size_t                   n_poly;
+ std::vector<std::vector<pt2d>> polygons;
 
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -388,22 +357,9 @@ int main(int argc, char *argv[])
  }
 
  /* read polygon contours */
- if(0 != read_contours("./out/out0.json", &v_poly_vert, &n_poly, &n_poly_vert)) {
+ if(0 != read_contours("./out/out0.json", polygons)) {
   status = 2;
   goto main_terminate;
- }
- {
-  unsigned i = 0;
-  unsigned vi;
-  for(unsigned pi = 0; pi < n_poly; ++pi) {
-   size_t n = n_poly_vert[pi];
-
-   printf("poly: %u\n", pi);
-   for(vi = 0; vi < n; ++vi) {
-    printf("\tv[%u]: %f, %f\n", vi, v_poly_vert[i + vi].x, v_poly_vert[i + vi].y);
-   }
-   i += vi;
-  }
  }
 
  /* display polygon vertices */
@@ -463,10 +419,6 @@ int main(int argc, char *argv[])
   assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
   assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
 
-  pt2d     *vertices = v_poly_vert;
-  size_t    np       = n_poly;
-  size_t   *npv      = n_poly_vert;
-
   double  th     = 3.0 * U;   /* thickness */
   double  th_2   = th * th;   /* thinckness squared */
   double  bl     = 1.0 * U;   /* blend distance */
@@ -494,7 +446,6 @@ int main(int argc, char *argv[])
   printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
   out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
-  //~ exit(0);
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
@@ -502,15 +453,14 @@ int main(int argc, char *argv[])
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
     pt2d      p   = {x,y};
     pt2d      v0, v1;
-    unsigned  vi = 0;
     double    d2;
     double    t;
 
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 	t = 1e18;
 
-	for(size_t pi = 0; pi < np; pi += 1, vi += 1) { /* polygons */
-     for(size_t ei = vi + npv[pi] - 1;  vi < ei; vi += 1) { /* vertices */
+	for(auto &vertices : polygons) { /* all polygons */
+     for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) { /* vertices */
       v0 = vertices[vi    ];
       v1 = vertices[vi + 1];
       d2 = distance_sq(p, v0);
@@ -549,6 +499,30 @@ l_end_pixel: ;
   }
 
  }
+
+ //~ /*  */
+ //~ {
+  //~ pt2d     *vertices = v_poly_vert;
+  //~ size_t    np       = n_poly;
+  //~ size_t   *npv      = n_poly_vert;
+  //~ unsigned  bf_w     = xcb_ctx.img_raster_buf.w;
+  //~ unsigned  bf_h     = xcb_ctx.img_raster_buf.h;
+  //~ auto     *pbf      = &xcb_ctx.img_raster_buf;
+  //~ double    U        = 2.0 / std::min(bf_w, bf_h);
+
+  //~ for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
+   //~ for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
+    //~ double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
+    //~ double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
+    //~ pt2d      p   = {x,y};
+
+    //~ for(unsigned pi = 0; pi < np; pi += 1) {
+     //~ if(pnpoly()) {
+     //~ }
+    //~ }
+   //~ }
+  //~ }
+ //~ }
 
  /* loop untill exit signal arrives, or until window is closed */
  status = 0;
@@ -646,12 +620,6 @@ main_terminate:
  /* ... Instead, the shared memory object will be garbage collected when the last reference to
     the shared memory object is removed. ... */
   close(mem_fd_imgbuf);
- }
- if(NULL != v_poly_vert) {
-  free(v_poly_vert);
- }
- if(NULL != n_poly_vert) {
-  free(n_poly_vert);
  }
 
  printf("normal process termination\n");
