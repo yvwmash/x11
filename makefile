@@ -14,8 +14,8 @@ PFLAGS       = -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=202406L -D__BSD_VISIBLE=1
 SFLAGS       = -fsanitize=leak,signed-integer-overflow,bounds,float-cast-overflow,pointer-overflow,undefined
 CFLAGS_WARN    = -Weverything -Wno-c++98-compat   -Wno-pre-c23-compat      -Wno-unsafe-buffer-usage -Wno-old-style-cast
 CXXFLAGS_WARN  = -Weverything -Wno-c++98-compat   -Wno-unsafe-buffer-usage -Wno-old-style-cast
-CFLAGS       = -std=c23   -Wall -Wpedantic -Wextra $(CFLAGS_WARN)   -fpic -fopenmp
-CXXFLAGS     = -std=c++23 -Wall -Wpedantic -Wextra $(CXXFLAGS_WARN) -fpic -fopenmp
+CFLAGS       = -std=c23   -Wall -Wpedantic -Wextra $(CFLAGS_WARN)   -fpic
+CXXFLAGS     = -std=c++23 -Wall -Wpedantic -Wextra $(CXXFLAGS_WARN) -fpic
 CFLAGS_DBG   = -O0 -ggdb3
 CXXFLAGS_DBG = -O0 -ggdb3
 CFLAGS_REL   = -O2
@@ -134,7 +134,7 @@ bin/img2poly: $(OBJ_OPENCV) $(OBJ_VG)
 	$(CXX) $(SFLAGS) $(OBJ_VG) $(OBJ_OPENCV) -o ./bin/img2poly $(LIBS_DY_CV)
 
 bin/cpu_compute0: $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUTE0)
-	$(CXX) -fopenmp $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
+	$(CXX) $(SFLAGS) $(OBJ_CPU_COMPUTE0) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) -o ./bin/cpu_compute0 $(LIBS_DY_DRM) $(LIBS_DY_DRM) $(LIBS_DY_XCB) $(LIBS_DY_CPU0)
 
 # object files, "main" files
 ./build/prob_xcb.o: prob_xcb.c $(DEPS)
