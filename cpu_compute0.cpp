@@ -159,7 +159,7 @@ static int read_contours(const char *fn, pt2d **va, size_t *n_p, size_t **n_v) {
 
 
  /* allocate */
- *n_v = (size_t*)malloc(*n_p * sizeof(unsigned));
+ *n_v = (size_t*)malloc(*n_p * sizeof(size_t));
  if(NULL == *n_v) {
   status = 3;
   goto l_end_read_contours;
