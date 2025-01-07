@@ -48,6 +48,10 @@ notice the dots before some list elements.
 	#		selects a block of text that you can indent as a whole.
 	#       i did not find a scite property to change the key combo.
 	#	11* statusbar at the bottom shows line index and column index
+	#   12* user options: magnification
+	#	    magnification       = 7 # my eyes see this way
+	#		output.magnification= 8 # for the output?
+
 	> cp ./conf/~.SciTEUser.properties ~/.SciTEUser.properties
 
 2* bash := bash shell configuration script.
