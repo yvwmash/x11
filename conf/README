@@ -70,6 +70,15 @@ notice the dots before some list elements.
 	# now the color scheme really does not fit me.
 	> cp ./conf/nanorc /usr/local/etc/
 
+4* vscode := one true business editor(if you code business)
+	pkg install vscode
+	# start installing extensions, plugins, editing configs. get tired, use scite.
+	# nice directory structure. definetly moar of that.
+	# you will !have-to! save a workspace, before start configuring vscode.
+	# compiliren-запустилен-arbaiten!
+	# to be serious: if you not used to scite, or nano(vim, emacs), a good start.
+	# DONT GET HURT !
+
 4*  if you missed setting a locale for you system at BSD installation,
     you should check locale settings in the "/etc/login.conf".
 	for example UA locale is LANG=uk_UA.UTF-8. do not forget to run "cap_mkdb /etc/login.conf" after.
