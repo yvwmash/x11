@@ -331,19 +331,21 @@ int main(int argc, char *argv[])
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
 
- /* connect XCB, create window */
+ /* connect XCB, create window
+    various extensions of the X11 server will be checked here.
+    if DRI3 extension is present, an attempt will be made to aquire DRM file descriptor.
+ */
  if(aux_xcb_connect(&xcb_ctx, ":0", 0) < 0){
   status = 1;
   goto main_terminate;
  }
 
  /* assign DRM fd */
- drm_fd     = xcb_ctx.drm_fd;
- drm_ctx.fd = drm_fd;
- if(drm_fd < 0) {
+ if(0 != aux_drm_take_xcb_dri_fd(&drm_ctx, &xcb_ctx)) {
   status = 1;
   goto main_terminate;
  }
+ drm_fd = drm_ctx.fd;
 
  /* set DRM fd to non-blocking mode */
  if(ioctl(drm_fd, FIONBIO, (char *)&on) < 0){

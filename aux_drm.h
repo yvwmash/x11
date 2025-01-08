@@ -39,6 +39,9 @@ extern "C" {
 #define AUX_DRM_EVENT_FLIP_COMPLETE  0x02
 #define AUX_DRM_EVENT_CRTC_SEQUENCE	 0x03
 
+/* forward declaration */
+typedef struct aux_xcb_ctx aux_xcb_ctx;
+
 /* same as seen in drm.h */
 struct aux_drm_event_base {
  uint32_t  typ; /* event type */
@@ -68,6 +71,7 @@ typedef struct aux_drm_ctx {
 
 /* */
 int   aux_drm_open_fd(const char *nm, aux_drm_ctx *ctx);
+int   aux_drm_take_xcb_dri_fd(aux_drm_ctx *ctx, aux_xcb_ctx *xcb_ctx);
 void  aux_drm_zero_ctx(aux_drm_ctx *ctx);
 bool  aux_drm_init_ctx(aux_drm_ctx *ctx);
 void  aux_drm_destroy_ctx(aux_drm_ctx *ctx);

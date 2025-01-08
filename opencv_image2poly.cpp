@@ -375,16 +375,16 @@ int main(int argc, char** argv) {
 	if(bdisplay) {
 		cv::Scalar red = { 0, 0, 150};
 
-		for (size_t i = 0; i < vp.size(); ++i) {
-			for (auto &v : vp[i]) {
-				cv::circle(image, v, 5, red, -1);
-			}
-		}
-
-		// Draw the original contour
-		cv::drawContours(image, vp, -1, cv::Scalar(0, 0, 0), 2);
-		// Draw circles on the vertices of the polygon
         try {
+			for (size_t i = 0; i < vp.size(); ++i) {
+				for (auto &v : vp[i]) {
+					cv::circle(image, v, 5, red, -1);
+				}
+			}
+
+			// Draw the original contour
+			cv::drawContours(image, vp, -1, cv::Scalar(0, 0, 0), 2);
+			// Draw circles on the vertices of the polygon
 			cv::imshow("Contour Approximation", image);
 			while (true) {
 				int k = cv::waitKey(0);
@@ -393,7 +393,7 @@ int main(int argc, char** argv) {
 				}
 			}
 		} catch (const cv::Exception& e) {
-			std::cerr << "OpenCV Exception: " << e.what() << std::endl;
+			std::cerr << " * opencv exception: " << e.what() << std::endl;
 		}
 	}
 

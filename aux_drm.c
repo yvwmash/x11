@@ -18,6 +18,7 @@
 
 #pragma clang diagnostic pop
 
+#include "aux_xcb.h"
 #include "aux_drm.h"
 
 /* *********************************************************************************** */
@@ -449,6 +450,20 @@ int  aux_drm_open_fd(const char *nm, aux_drm_ctx *ctx) {
 
  ctx->fd = fd;
  return fd;
+}
+
+/* take DRI fd from xcb */
+int  aux_drm_take_xcb_dri_fd(aux_drm_ctx *ctx, aux_xcb_ctx *xcb_ctx) {
+ int fd = xcb_ctx->drm_fd;
+
+ if(-1 == fd) {
+  fprintf(stderr, " * aux-drm: can not take fd from XCB context. fd is not initialized.");
+  return 1;
+ }
+
+ ctx->fd = fd;
+
+ return 0;
 }
 
 /* */
