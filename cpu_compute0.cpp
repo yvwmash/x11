@@ -519,8 +519,10 @@ int main(int argc, char *argv[])
   double  lim_2  = lim * lim; /* limit squared */
   double  r_2    = R * R;     /* vertex circle radius squared */
   /* colors */
-  vec3d   c_v    = vec3d(0.0, 0.0, 1.0); /* RGB, BLUE  */
-  vec3d   c_c    = vec3d(1.0, 1.0, 1.0); /* RGB, WHITE */
+  vec3d   c_v    = vec3d(0.0, 0.0, 1.0);  /* RGB, BLUE  */
+  vec3d   c_c    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
+  vec3d   c_b    = vec3d(0.0, 0.0, 0.0);  /* RGB, BLACK */
+  vec3d   c_r    = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
   vec3d   dst_c;
   vec3d   src_c;
   vec4d   fout_c;
@@ -625,30 +627,37 @@ int main(int argc, char *argv[])
       v0 = vertices[vi];
       v1 = vertices[vi + 1];
 
-      /* minimum distance to *all* polygon segments */
+      /* minimum squared distance to *all* polygon segments */
       d2 = sq_dist_segment(p, v0, v1);
       t  = std::min(t, d2);
      }
     }
 
-    if(t > lim_2) { /* squared distance out of range */
+    /* from now on, recall that t := squared distance */
+    if(t > lim_2) { /* distance out of range of a line */
+     t  = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
+     t *= 4.0; /* intensify RED, because it is not seen on my screen */
+     fout_c = vec4d(1.0, mix(c_b, c_r, t));
+     if(fout_c.y > 1.0) {
+      printf("\t\t tt: %.8f\n", t);
+      printf("\t\t cc: %.8f %.8f %.8f %.8f\n", fout_c.x, fout_c.y, fout_c.z, fout_c.w); }
      goto l_end_pixel;
-    }
+    } else { /* it is a line segment */
+     src_c = c_c;
 
-    src_c = c_c;
-
-    if(t > th_2) { /* some blend near the edges of the line */
-     t = smoothstep(th_2, lim_2, t);
-     /* blend with dst color. pixels that are further from line center receive less blend factor */
-     t = std::lerp(1., 0., t);
-    } else {
-     t = 1.0; /* pure color */
+     if(t > th_2) { /* some blend near the edges of the line */
+      t = smoothstep(th_2, lim_2, t);
+      /* blend with dst color. pixels that are further from line center receive less blend factor */
+      t = std::lerp(1., 0., t);
+     } else {
+      t = 1.0; /* pure color */
+     }
     }
 
 l_mix_colour:
     fout_c = vec4d(1.0, mix(dst_c, src_c, t));
-    aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
 l_end_pixel: ;
+    aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
    }
   }
 
