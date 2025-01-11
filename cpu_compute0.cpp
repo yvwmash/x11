@@ -321,7 +321,8 @@ int main(int argc, char *argv[])
  /* polygons             */
  std::vector<std::vector<pt2d>> polygons;
  /* polygon convex hulls */
- std::vector<std::vector<pt2d>> polygons_chulls;
+ std::vector<std::vector<pt2d>> less_polygons_chulls;
+ std::vector<std::vector<pt2d>> more_polygons_chulls;
  /* polygon centroids */
  std::vector<pt2d>              polygons_centroid;
 
@@ -550,17 +551,17 @@ int main(int argc, char *argv[])
    goto main_terminate;
   }
 
-  /* calculate polygon convex hulls and enlarge em */
+  /* calculate enlarged and shrinked polygon convex hulls */
   {
-   double lim_dispay = std::max(lim, R) + R; /* */
-
    /* calculate polygon convex hulls */
-   polygons_chulls.reserve(polygons.size());
+   less_polygons_chulls.reserve(polygons.size());
+   more_polygons_chulls.reserve(polygons.size());
    for(auto &vertices : polygons) {
     std::vector<pt2d> chull;
 
     convex_hull(vertices, chull);
-    polygons_chulls.emplace_back(chull);
+    less_polygons_chulls.push_back(chull);
+    more_polygons_chulls.push_back(chull);
    }
 
    /* calculate polygon centroids */
@@ -572,18 +573,31 @@ int main(int argc, char *argv[])
     polygons_centroid.emplace_back(c);
    }
 
-   /* enlarge polygon convex hulls */
-   for(size_t pi = 0; pi < polygons_chulls.size(); pi += 1) {
+   /* enlarge and shrink polygon convex hulls */
+   for(size_t pi = 0; pi < polygons.size(); pi += 1) {
 	pt2d c = polygons_centroid[pi];
 
-    for(auto &v : polygons_chulls[pi]) {
+    /* shrink */
+    for(auto &v : less_polygons_chulls[pi]) {
+     vec2d  vec = v - c; /* vertex - centroid */
+     double len = length(vec);
+     pt2d   p;
+
+     /* shrink vector */
+     /* p = c + t * v */
+     p = c + ((len - lim) / len) * vec;
+     v = p; /* new convex hull vertex position */
+    }
+
+    /* enlarge */
+    for(auto &v : more_polygons_chulls[pi]) {
      vec2d  vec = v - c; /* vertex - centroid */
      double len = length(vec);
      pt2d   p;
 
      /* extend vector */
      /* p = c + t * v */
-     p = c + ((len + lim_dispay) / len) * vec;
+     p = c + ((len + lim) / len) * vec;
      v = p; /* new convex hull vertex position */
     }
    }
@@ -617,9 +631,23 @@ int main(int argc, char *argv[])
     /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 
-    /* is pixel inside of polygon chull? */
-    for(size_t pi = 0;  pi <  polygons_chulls.size(); pi += 1) {
-     if( pnpoly(polygons_chulls[pi], p) ) {
+    /* vertex */
+	for(std::vector<pt2d> &vertices : polygons) { /* all polygons */
+     for(auto &v : vertices) { /* vertices */
+	  d2 = distance_sq(p, v);
+      if(d2 < r_2) { /* its a vertex pixel */
+       src_c = c_v;
+       t     = 1.0; /* pure src color */
+       goto l_mix_colour;
+      }
+     }
+    }
+
+    /* is pixel inside of an enlarged polygon chull
+       and pixel is outside of a shrinked polygon chull?
+    */
+    for(size_t pi = 0;  pi <  polygons.size(); pi += 1) {
+     if( not pnpoly(less_polygons_chulls[pi], p) && pnpoly(more_polygons_chulls[pi], p) ) {
       ref_polygons.push_back(polygons[pi]);
      }
     }
@@ -631,24 +659,13 @@ int main(int argc, char *argv[])
      goto l_mix_colour;
     }
 
-    /* vertex */
-	for(std::vector<pt2d> &vertices : ref_polygons) { /* all polygons */
-     for(auto &v : vertices) { /* vertices */
-	  d2 = distance_sq(p, v);
-      if(d2 < r_2) { /* its a vertex pixel */
-       src_c = c_v;
-       t     = 1.0; /* pure src color */
-       goto l_mix_colour;
-      }
-     }
-    }
-
     /* point is inside at least one of polygons convex hulls */
 	t = sq_dist_all_polygons(ref_polygons, p);
 
     /* from now on, recall that t := squared distance */
     if(t > lim_2) { /* distance out of range of a line */
-     goto l_mix_colour;
+     fout_c = vec4d(1.0, c_b);
+     goto l_end_pixel;
     } else { /* it is a line segment */
      src_c = c_c;
 
