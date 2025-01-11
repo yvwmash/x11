@@ -504,6 +504,23 @@ int main(int argc, char *argv[])
     return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
   };
 
+  auto sq_dist_all_polygons = [&](auto& P, pt2d& p) -> double {
+   double t = 1e18;
+   pt2d   v0, v1;
+
+   for(std::vector<pt2d> &vertices : P) {
+   	for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) {
+   	 v0 = vertices[vi];
+   	 v1 = vertices[vi + 1];
+
+   	 /* minimum squared distance to *all* polygon segments */
+   	 t = std::min(t, sq_dist_segment(p, v0, v1));
+   	}
+   }
+
+   return t;
+  };
+
 #pragma clang diagnostic pop
 
   assert(xcb_ctx.img_raster_buf.bpp == 32);
@@ -535,6 +552,8 @@ int main(int argc, char *argv[])
 
   /* calculate polygon convex hulls and enlarge em */
   {
+   double lim_dispay = std::max(lim, R) + R; /* */
+
    /* calculate polygon convex hulls */
    polygons_chulls.reserve(polygons.size());
    for(auto &vertices : polygons) {
@@ -564,7 +583,7 @@ int main(int argc, char *argv[])
 
      /* extend vector */
      /* p = c + t * v */
-     p = c + ((len + lim) / len) * vec;
+     p = c + ((len + lim_dispay) / len) * vec;
      v = p; /* new convex hull vertex position */
     }
    }
@@ -598,8 +617,22 @@ int main(int argc, char *argv[])
     /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 
+    /* is pixel inside of polygon chull? */
+    for(size_t pi = 0;  pi <  polygons_chulls.size(); pi += 1) {
+     if( pnpoly(polygons_chulls[pi], p) ) {
+      ref_polygons.push_back(polygons[pi]);
+     }
+    }
+    if(ref_polygons.empty()) { /* check every line segment, of every polygon, for the distance */
+     t      = sq_dist_all_polygons(polygons, p);
+     t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
+     t     *= 4.0; /* intensify RED, because it is not seen on my screen */
+     src_c  = c_r;
+     goto l_mix_colour;
+    }
+
     /* vertex */
-	for(auto &vertices : polygons) { /* all polygons */
+	for(std::vector<pt2d> &vertices : ref_polygons) { /* all polygons */
      for(auto &v : vertices) { /* vertices */
 	  d2 = distance_sq(p, v);
       if(d2 < r_2) { /* its a vertex pixel */
@@ -610,38 +643,12 @@ int main(int argc, char *argv[])
      }
     }
 
-    /* is pixel inside of polygon chull? */
-    for(size_t pi = 0;  pi <  polygons_chulls.size(); pi += 1) {
-     if( pnpoly(polygons_chulls[pi], p) ) {
-      ref_polygons.push_back(polygons[pi]);
-     }
-    }
-    if(ref_polygons.empty()) {
-     goto l_mix_colour;
-    }
-
     /* point is inside at least one of polygons convex hulls */
-	t = 1e18;
-    for(std::vector<pt2d> &vertices : ref_polygons) {
-     for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) {
-      v0 = vertices[vi];
-      v1 = vertices[vi + 1];
-
-      /* minimum squared distance to *all* polygon segments */
-      d2 = sq_dist_segment(p, v0, v1);
-      t  = std::min(t, d2);
-     }
-    }
+	t = sq_dist_all_polygons(ref_polygons, p);
 
     /* from now on, recall that t := squared distance */
     if(t > lim_2) { /* distance out of range of a line */
-     t  = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
-     t *= 4.0; /* intensify RED, because it is not seen on my screen */
-     fout_c = vec4d(1.0, mix(c_b, c_r, t));
-     if(fout_c.y > 1.0) {
-      printf("\t\t tt: %.8f\n", t);
-      printf("\t\t cc: %.8f %.8f %.8f %.8f\n", fout_c.x, fout_c.y, fout_c.z, fout_c.w); }
-     goto l_end_pixel;
+     goto l_mix_colour;
     } else { /* it is a line segment */
      src_c = c_c;
 
