@@ -321,8 +321,8 @@ int main(int argc, char *argv[])
  /* polygons             */
  std::vector<std::vector<pt2d>> polygons;
  /* polygon convex hulls */
- std::vector<std::vector<pt2d>> less_polygons_chulls;
- std::vector<std::vector<pt2d>> more_polygons_chulls;
+ std::vector<std::vector<pt2d>> less_polygons;
+ std::vector<std::vector<pt2d>> more_polygons;
  /* polygon centroids */
  std::vector<pt2d>              polygons_centroid;
 
@@ -554,14 +554,11 @@ int main(int argc, char *argv[])
   /* calculate enlarged and shrinked polygon convex hulls */
   {
    /* calculate polygon convex hulls */
-   less_polygons_chulls.reserve(polygons.size());
-   more_polygons_chulls.reserve(polygons.size());
+   less_polygons.reserve(polygons.size());
+   more_polygons.reserve(polygons.size());
    for(auto &vertices : polygons) {
-    std::vector<pt2d> chull;
-
-    convex_hull(vertices, chull);
-    less_polygons_chulls.push_back(chull);
-    more_polygons_chulls.push_back(chull);
+    less_polygons.push_back(vertices);
+    more_polygons.push_back(vertices);
    }
 
    /* calculate polygon centroids */
@@ -573,12 +570,12 @@ int main(int argc, char *argv[])
     polygons_centroid.emplace_back(c);
    }
 
-   /* enlarge and shrink polygon convex hulls */
+   /* enlarge and shrink polygon frames */
    for(size_t pi = 0; pi < polygons.size(); pi += 1) {
 	pt2d c = polygons_centroid[pi];
 
     /* shrink */
-    for(auto &v : less_polygons_chulls[pi]) {
+    for(auto &v : less_polygons[pi]) {
      vec2d  vec = v - c; /* vertex - centroid */
      double len = length(vec);
      pt2d   p;
@@ -590,7 +587,7 @@ int main(int argc, char *argv[])
     }
 
     /* enlarge */
-    for(auto &v : more_polygons_chulls[pi]) {
+    for(auto &v : more_polygons[pi]) {
      vec2d  vec = v - c; /* vertex - centroid */
      double len = length(vec);
      pt2d   p;
@@ -647,7 +644,7 @@ int main(int argc, char *argv[])
        and pixel is outside of a shrinked polygon chull?
     */
     for(size_t pi = 0;  pi <  polygons.size(); pi += 1) {
-     if( not pnpoly(less_polygons_chulls[pi], p) && pnpoly(more_polygons_chulls[pi], p) ) {
+     if( not pnpoly(less_polygons[pi], p) && pnpoly(more_polygons[pi], p) ) {
       ref_polygons.push_back(polygons[pi]);
      }
     }
