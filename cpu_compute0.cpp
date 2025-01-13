@@ -243,65 +243,6 @@ static unsigned pnpoly(const std::vector<pt2d> &polygon, const pt2d &pt) {
  return (unsigned)c;
 }
 
-/* ************************************************************************* */
-
-static int convex_hull(const std::vector<pt2d> P, std::vector<pt2d> &chull) {
- std::vector<cv::Point2f>  cv_points;
- std::vector<cv::Point2f>  cv_hull;
-
- cv_points.reserve(P.size());
-
- /* copy to opencv format */
- for(auto &p : P) {
-  cv_points.push_back({(float)p.x, (float)p.y});
- }
-
- /* compute the convex hull */
- try {
-  cv::convexHull(cv_points, cv_hull);
- } catch(const cv::Exception& e) {
-  std::cerr << "Error message: " << e.what() << std::endl;
-  return 1;
- }
- chull.reserve(cv_hull.size());
-
- /* copy points back to 'out' */
- for(auto &p : cv_hull) {
-  chull.push_back({(double)p.x, (double)p.y});
- }
-
- return 0;
-}
-
-/* ************************************************************************* */
-
-static int centroid(const std::vector<pt2d> P, pt2d &out) {
- std::vector<cv::Point2f> cv_contour;
- cv::Moments              cv_m;
-
- /* copy to opencv format */
- for(auto &p : P) {
-  cv_contour.push_back({(float)p.x, (float)p.y});
- }
-
- try {
-  cv_m = cv::moments(cv_contour);
- } catch(const cv::Exception& e) {
-  std::cerr << "Error message: " << e.what() << std::endl;
-  return 1;
- }
-
- /* calculate the centroid */
- cv::Point2d c(cv_m.m10 / cv_m.m00, cv_m.m01 / cv_m.m00);
-
- out.x = c.x;
- out.y = c.y;
-
- return 0;
-}
-
-/* ************************************************************************* */
-
 /* ============================================================================================== */
 
 /* */
@@ -320,11 +261,6 @@ int main(int argc, char *argv[])
 
  /* polygons             */
  std::vector<std::vector<pt2d>> polygons;
- /* polygon convex hulls */
- std::vector<std::vector<pt2d>> less_polygons;
- std::vector<std::vector<pt2d>> more_polygons;
- /* polygon centroids */
- std::vector<pt2d>              polygons_centroid;
 
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
@@ -505,6 +441,7 @@ int main(int argc, char *argv[])
     return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
   };
 
+  /* return minimum distance from a point to closest polygons line segment */
   auto sq_dist_all_polygons = [&](auto& P, pt2d& p) -> double {
    double t = 1e18;
    pt2d   v0, v1;
@@ -551,55 +488,6 @@ int main(int argc, char *argv[])
    goto main_terminate;
   }
 
-  /* calculate enlarged and shrinked polygon convex hulls */
-  {
-   /* calculate polygon convex hulls */
-   less_polygons.reserve(polygons.size());
-   more_polygons.reserve(polygons.size());
-   for(auto &vertices : polygons) {
-    less_polygons.push_back(vertices);
-    more_polygons.push_back(vertices);
-   }
-
-   /* calculate polygon centroids */
-   polygons_centroid.reserve(polygons.size());
-   for(auto &vertices : polygons) {
-    pt2d   c;
-
-    centroid(vertices, c);
-    polygons_centroid.emplace_back(c);
-   }
-
-   /* enlarge and shrink polygon frames */
-   for(size_t pi = 0; pi < polygons.size(); pi += 1) {
-	pt2d c = polygons_centroid[pi];
-
-    /* shrink */
-    for(auto &v : less_polygons[pi]) {
-     vec2d  vec = v - c; /* vertex - centroid */
-     double len = length(vec);
-     pt2d   p;
-
-     /* shrink vector */
-     /* p = c + t * v */
-     p = c + ((len - lim) / len) * vec;
-     v = p; /* new convex hull vertex position */
-    }
-
-    /* enlarge */
-    for(auto &v : more_polygons[pi]) {
-     vec2d  vec = v - c; /* vertex - centroid */
-     double len = length(vec);
-     pt2d   p;
-
-     /* extend vector */
-     /* p = c + t * v */
-     p = c + ((len + lim) / len) * vec;
-     v = p; /* new convex hull vertex position */
-    }
-   }
-  }
-
   printf(" ! U   : %f\n", U);
   printf(" ! U2  : %f\n", U * U);
   printf(" ! R   : %f\n", R);
@@ -640,40 +528,20 @@ int main(int argc, char *argv[])
      }
     }
 
-    /* is pixel inside of an enlarged polygon chull
-       and pixel is outside of a shrinked polygon chull?
-    */
-    for(size_t pi = 0;  pi <  polygons.size(); pi += 1) {
-     if( not pnpoly(less_polygons[pi], p) && pnpoly(more_polygons[pi], p) ) {
-      ref_polygons.push_back(polygons[pi]);
+    /* is pixel inside a polygon? */
+    for(auto &polygon :  polygons) {
+     if( pnpoly(polygon, p) ) { /* https://wrfranklin.org/Research/Short_Notes/pnpoly.html */
+      fout_c = vec4d(1.0, c_b);
+      goto l_end_pixel;
      }
     }
-    if(ref_polygons.empty()) { /* check every line segment, of every polygon, for the distance */
-     t      = sq_dist_all_polygons(polygons, p);
-     t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
-     t     *= 4.0; /* intensify RED, because it is not seen on my screen */
-     src_c  = c_r;
-     goto l_mix_colour;
-    }
 
-    /* point is inside at least one of polygons convex hulls */
-	t = sq_dist_all_polygons(ref_polygons, p);
-
-    /* from now on, recall that t := squared distance */
-    if(t > lim_2) { /* distance out of range of a line */
-     fout_c = vec4d(1.0, c_b);
-     goto l_end_pixel;
-    } else { /* it is a line segment */
-     src_c = c_c;
-
-     if(t > th_2) { /* some blend near the edges of the line */
-      t = smoothstep(th_2, lim_2, t);
-      /* blend with dst color. pixels that are further from line center receive less blend factor */
-      t = std::lerp(1., 0., t);
-     } else {
-      t = 1.0; /* pure color */
-     }
-    }
+    /* check every line segment, of every polygon, for the distance */
+	t      = sq_dist_all_polygons(polygons, p);
+	t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
+	t     *= 7.0; /* intensify RED, because it is not seen on my screen */
+	src_c  = c_r;
+	goto l_mix_colour;
 
 l_mix_colour:
     fout_c = vec4d(1.0, mix(dst_c, src_c, t));
