@@ -539,7 +539,9 @@ int main(int argc, char *argv[])
     /* check every line segment, of every polygon, for the distance */
 	t      = sq_dist_all_polygons(polygons, p);
 	t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
-	t     *= 7.0; /* intensify RED, because it is not seen on my screen */
+	t     *= 20.0; /* intensify RED, because it is not seen on my screen */
+    if(t > 0.5)
+     t = 0.5;
 	src_c  = c_r;
 	goto l_mix_colour;
 
