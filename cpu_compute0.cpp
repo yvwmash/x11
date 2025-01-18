@@ -483,7 +483,7 @@ static size_t idx_polygon[WIN_W][WIN_H];
  assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
  assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
 
- /* display polygon vertices */
+ /* display polygon distance fields */
  {
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
   unsigned  bf_h = xcb_ctx.img_raster_buf.h;
@@ -517,46 +517,94 @@ static size_t idx_polygon[WIN_W][WIN_H];
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
     pt2d      p   = {x,y};
-    pt2d      v0, v1;
     double    d;
-    double    t = 0.0; /* pure dst color */
     size_t    idx;
 
     /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
 
-    /* vertex */
-	for(std::vector<pt2d> &vertices : polygons) { /* all polygons */
-     for(auto &v : vertices) { /* vertices */
-      if(distance_sq(p, v) < (R * R)) { /* its a vertex pixel */
-       src_c = c_v;
-       t     = 1.0; /* pure src color */
-       goto l_mix_colour;
-      }
-     }
-    }
-
     /* check every line segment, of every polygon, for the distance  */
 	d = dist_all_polygons(polygons, p, idx) / 2.0; /* map from {0, 2} to {0, 1} */
     sdf_polygon[pix_x][pix_y] = d;
     idx_polygon[pix_x][pix_y] = idx;
-    if( d < 0.0 ) { /* is pixel inside a polygon? */
-     fout_c = vec4d(1.0, c_b);
-     goto l_end_pixel;
+    if( d < R ) { /* can it be a vertex pixels? */
+     /* vertex */
+	 for(std::vector<pt2d> &V : polygons) { /* all polygons */
+      for(auto &v : V) { /* vertices */
+       if(distance_sq(p, v) < (R * R)) { /* its a vertex pixel */
+        fout_c = vec4d(1.0, c_v);
+        goto l_end_pixel0;
+       }
+      }
+     }
+
+     /* not a vertex */
+     if( d < 0.0 ) { /* is pixel inside a polygon? */
+      fout_c = vec4d(1.0, c_b);
+      goto l_end_pixel0;
+     }
     }
-    t = 1.0; /* disregard distance for now. only interested in polygon index. */
+
     if(d < (10.0 * U)) { /* limit distance field */
-     src_c = c_r;
+     fout_c = vec4d(1.0, c_r);
     } else {
-     src_c = c_pdf[idx];
+     fout_c = vec4d(1.0, c_pdf[idx]);
     }
 
-	goto l_mix_colour;
-
-l_mix_colour:
-    fout_c = vec4d(1.0, mix(dst_c, src_c, t));
-l_end_pixel: ;
+l_end_pixel0: ;
     aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
+   }
+  }
+
+ }
+
+ /* scan 2x2 pixel area. display polygon distance borders. */
+ {
+  unsigned  bf_w = xcb_ctx.img_raster_buf.w;
+  unsigned  bf_h = xcb_ctx.img_raster_buf.h;
+  auto     *pbf  = &xcb_ctx.img_raster_buf;
+
+  /* colors */
+  vec3d   c_white = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
+  vec3d   dst_c;
+  vec3d   src_c;
+  vec4d   fout_c;
+
+  /* limit image boundaries. will scan 2x2. */
+  if( (bf_w % 2) != 0 ) {
+   bf_w -= 1;
+  }
+  if( (bf_h % 2) != 0 ) {
+   bf_h -= 1;
+  }
+
+  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 2) { /* pixels */
+   for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 2) {
+    double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
+    double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
+    pt2d      p   = {x,y};
+    size_t    idx00, idx01, idx10, idx11;
+
+    idx00 = idx_polygon[pix_x    ][pix_y    ];
+    idx01 = idx_polygon[pix_x + 1][pix_y    ];
+    idx10 = idx_polygon[pix_x    ][pix_y + 1];
+    idx11 = idx_polygon[pix_x + 1][pix_y + 1];
+
+    if((idx00 != idx01) || (idx10 != idx11)) {
+     fout_c = vec4d(1.0, c_white);
+     aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
+     aux_raster_putpix(pix_x + 1, pix_y, ui_argb(fout_c), pbf);
+     aux_raster_putpix(pix_x, pix_y + 1, ui_argb(fout_c), pbf);
+     aux_raster_putpix(pix_x + 1, pix_y + 1, ui_argb(fout_c), pbf);
+    }
+
+    /* check every  */
+	//~ d   = sdf_polygon[pix_x][pix_y];
+
+//~ l_mix_colour1:
+    //~ fout_c = vec4d(1.0, mix(dst_c, src_c, t));
+//~ l_end_pixel1: ;
+    //~ aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
    }
   }
 
