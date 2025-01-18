@@ -442,21 +442,28 @@ int main(int argc, char *argv[])
   };
 
   /* return minimum distance from a point to closest polygons line segment */
-  auto sq_dist_all_polygons = [&](auto& P, pt2d& p) -> double {
-   double t = 1e18;
-   pt2d   v0, v1;
+  auto sq_dist_all_polygons = [&](auto& P, pt2d& p, size_t &pidx) -> double {
+   double t_m = 3.0;
+   double t_p = 3.0;
+   double t;
 
-   for(std::vector<pt2d> &vertices : P) {
-   	for(size_t vi = 0; vi < (vertices.size() - 1); vi += 1) {
-   	 v0 = vertices[vi];
-   	 v1 = vertices[vi + 1];
+   for(size_t pi = 0; pi < P.size(); pi += 1) {
+    auto &V = P[pi];
 
-   	 /* minimum squared distance to *all* polygon segments */
-   	 t = std::min(t, sq_dist_segment(p, v0, v1));
+   	for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
+   	 /* squared distance to polygon segment */
+   	 t = sq_dist_segment(p, V[vi], V[vi + 1]);
+     if(t < t_p) {
+      t_p = t;
+     }
    	}
+    if(t_p < t_m) {
+     t_m = t_p;
+     pidx = pi;
+	}
    }
 
-   return t;
+   return t_m;
   };
 
 #pragma clang diagnostic pop
@@ -478,6 +485,12 @@ int main(int argc, char *argv[])
   vec3d   c_c    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
   vec3d   c_b    = vec3d(0.0, 0.0, 0.0);  /* RGB, BLACK */
   vec3d   c_r    = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
+  const vec3d c_pdf[4]  = { /* RGB, polygon closest points */
+   {78.0 / 255.0, 6.0 / 255.0, 122.0 / 255.0},
+   {161.0 / 255.0, 95.0 / 255.0, 8.0 / 255.0},
+   {168.0 / 255.0, 196.0 / 255.0, 8.0 / 255.0},
+   {2.0 / 255.0, 191.0 / 255.0, 100.0 / 255.0},
+  };
   vec3d   dst_c;
   vec3d   src_c;
   vec4d   fout_c;
@@ -502,6 +515,7 @@ int main(int argc, char *argv[])
   printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
   out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
   printf(" UI  : %08x\n", ui_argb(out_c));
+  printf(" 100 x U  : %08f\n", 100.0 * U);
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
@@ -511,7 +525,7 @@ int main(int argc, char *argv[])
     pt2d      v0, v1;
     double    d2;
     double    t = 0.0; /* pure dst color */
-    std::vector<std::reference_wrapper<std::vector<pt2d>>> ref_polygons;
+    size_t    idx;
 
     /* get dst color */
     rgb_ui(aux_raster_getpix(pix_x, pix_y, pbf), dst_c);
@@ -537,12 +551,15 @@ int main(int argc, char *argv[])
     }
 
     /* check every line segment, of every polygon, for the distance */
-	t      = sq_dist_all_polygons(polygons, p);
+	t      = sq_dist_all_polygons(polygons, p, idx);
 	t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
-	t     *= 20.0; /* intensify RED, because it is not seen on my screen */
-    if(t > 0.5)
-     t = 0.5;
-	src_c  = c_r;
+    t      = 1.0; /* disregard distance for now. only interested in polygon index. */
+    if(t < (10.0 * U)) { /* limit distance field */
+     src_c = c_r;
+    } else {
+     src_c = c_pdf[idx];
+    }
+
 	goto l_mix_colour;
 
 l_mix_colour:
