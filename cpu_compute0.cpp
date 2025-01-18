@@ -570,27 +570,21 @@ l_end_pixel0: ;
   vec3d   src_c;
   vec4d   fout_c;
 
-  /* limit image boundaries. will scan 2x2. */
-  if( (bf_w % 2) != 0 ) {
-   bf_w -= 1;
-  }
-  if( (bf_h % 2) != 0 ) {
-   bf_h -= 1;
-  }
-
-  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 2) { /* pixels */
-   for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 2) {
+  for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
+   for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
     pt2d      p   = {x,y};
     size_t    idx00, idx01, idx10, idx11;
 
-    idx00 = idx_polygon[pix_x    ][pix_y    ];
-    idx01 = idx_polygon[pix_x + 1][pix_y    ];
-    idx10 = idx_polygon[pix_x    ][pix_y + 1];
-    idx11 = idx_polygon[pix_x + 1][pix_y + 1];
 
-    if((idx00 != idx01) || (idx10 != idx11)) {
+
+    idx00 = idx_polygon[pix_x                                 ] [pix_y    ];
+    idx01 = idx_polygon[std::clamp(pix_x + 1, pix_x, bf_w - 1)] [pix_y    ];
+    idx10 = idx_polygon[pix_x                                 ] [std::clamp(pix_y + 1, pix_y, bf_h - 1)];
+    idx11 = idx_polygon[std::clamp(pix_x + 1, pix_x, bf_w - 1)] [std::clamp(pix_y + 1, pix_y, bf_h - 1)];
+
+    if((idx00 != idx01) || (idx10 != idx11) || (idx00 != idx11)) {
      fout_c = vec4d(1.0, c_white);
      aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
      aux_raster_putpix(pix_x + 1, pix_y, ui_argb(fout_c), pbf);
