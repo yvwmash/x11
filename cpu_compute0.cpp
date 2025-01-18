@@ -224,6 +224,77 @@ l_end_read_contours:
  return status;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+
+/* ************************************************************************* */
+
+/* return minimum distance between line segment vw and point p */
+static auto dist_segment(pt2d p, pt2d v, pt2d w) -> double {
+ vec2d  r  = w - v;
+ double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
+
+ if (l2 == 0.0) return distance(p, v);   /* v == w case */
+ /* consider the line extending the segment, parameterized as v + t (w - v). */
+ /* find projection of point p onto the line.                                */
+ /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
+ /* clamp t from [0,1] to handle points outside the segment vw.              */
+ /* pp = v + t * r; pp is a point where projection falls on the segment      */
+ double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
+
+ return distance(p, v + t * r);
+}
+
+/* ************************************************************************* */
+
+/* return minimum distance between line segment vw and point p */
+static auto sq_dist_segment(pt2d p, pt2d v, pt2d w) -> double {
+ vec2d  r  = w - v;
+ double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
+
+ if (l2 == 0.0) return distance(p, v);   /* v == w case */
+ /* consider the line extending the segment, parameterized as v + t (w - v). */
+ /* find projection of point p onto the line.                                */
+ /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
+ /* clamp t from [0,1] to handle points outside the segment vw.              */
+ double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
+
+ v = v + t * r;  /* projection falls on the segment */
+ r = v - p;
+ return r.x*r.x + r.y*r.y; /* squared distance */
+}
+
+static auto distance_sq(auto &l, auto &r) -> double {
+ return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
+}
+
+/* ************************************************************************* */
+
+/* return minimum distance from a point to closest polygons line segment */
+static auto sq_dist_all_polygons(auto& P, pt2d& p, size_t &pidx) -> double {
+ double t_m = 3.0;
+ double t_p = 3.0;
+ double t;
+
+ for(size_t pi = 0; pi < P.size(); pi += 1) {
+  auto &V = P[pi];
+
+  for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
+   /* squared distance to polygon segment */
+   t = sq_dist_segment(p, V[vi], V[vi + 1]);
+   if(t < t_p) {
+    t_p = t;
+   }
+  }
+  if(t_p < t_m) {
+   t_m = t_p;
+   pidx = pi;
+  }
+ }
+
+ return t_m;
+}
+
 /* ************************************************************************* */
 
 /* point in polygon test */
@@ -399,74 +470,6 @@ int main(int argc, char *argv[])
   auto     *pbf  = &xcb_ctx.img_raster_buf;
   double    U    = 2.0 / std::min(bf_w, bf_h);
   double    R    = 7.0 * U;
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
-#pragma clang diagnostic ignored "-Wunused-variable"
-
-  /* return minimum distance between line segment vw and point p */
-  auto dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
-    vec2d  r  = w - v;
-    double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
-
-    if (l2 == 0.0) return distance(p, v);   /* v == w case */
-    /* consider the line extending the segment, parameterized as v + t (w - v). */
-    /* find projection of point p onto the line.                                */
-    /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
-    /* clamp t from [0,1] to handle points outside the segment vw.              */
-    /* pp = v + t * r; pp is a point where projection falls on the segment      */
-    double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
-
-    return distance(p, v + t * r);
-  };
-
-  /* return minimum distance between line segment vw and point p */
-  auto sq_dist_segment = [](pt2d p, pt2d v, pt2d w) -> double {
-   vec2d  r  = w - v;
-   double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
-
-   if (l2 == 0.0) return distance(p, v);   /* v == w case */
-   /* consider the line extending the segment, parameterized as v + t (w - v). */
-   /* find projection of point p onto the line.                                */
-   /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
-   /* clamp t from [0,1] to handle points outside the segment vw.              */
-   double t = std::clamp(dot(p - v, r) / l2, 0.0, 1.0);
-
-   v = v + t * r;  /* projection falls on the segment */
-   r = v - p;
-   return r.x*r.x + r.y*r.y; /* squared distance */
-  };
-
-  auto distance_sq = [](auto &l, auto &r) -> double {
-    return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
-  };
-
-  /* return minimum distance from a point to closest polygons line segment */
-  auto sq_dist_all_polygons = [&](auto& P, pt2d& p, size_t &pidx) -> double {
-   double t_m = 3.0;
-   double t_p = 3.0;
-   double t;
-
-   for(size_t pi = 0; pi < P.size(); pi += 1) {
-    auto &V = P[pi];
-
-   	for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
-   	 /* squared distance to polygon segment */
-   	 t = sq_dist_segment(p, V[vi], V[vi + 1]);
-     if(t < t_p) {
-      t_p = t;
-     }
-   	}
-    if(t_p < t_m) {
-     t_m = t_p;
-     pidx = pi;
-	}
-   }
-
-   return t_m;
-  };
-
-#pragma clang diagnostic pop
 
   assert(xcb_ctx.img_raster_buf.bpp == 32);
   assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
