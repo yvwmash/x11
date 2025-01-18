@@ -271,28 +271,36 @@ static auto distance_sq(auto &l, auto &r) -> double {
 /* ************************************************************************* */
 
 /* return minimum distance from a point to closest polygons line segment */
-static auto sq_dist_all_polygons(auto& P, pt2d& p, size_t &pidx) -> double {
- double t_m = 3.0;
- double t_p = 3.0;
- double t;
+static auto dist_all_polygons(auto& P, pt2d& p, size_t &pidx) -> double {
+ double min = DBL_MAX;
+ double ply = DBL_MAX;
+ double d;
 
  for(size_t pi = 0; pi < P.size(); pi += 1) {
   auto &V = P[pi];
 
   for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
    /* squared distance to polygon segment */
-   t = sq_dist_segment(p, V[vi], V[vi + 1]);
-   if(t < t_p) {
-    t_p = t;
+   d = sq_dist_segment(p, V[vi], V[vi + 1]);
+   if(d < ply) {
+    ply = d;
    }
   }
-  if(t_p < t_m) {
-   t_m = t_p;
+  if(ply < min) {
+   min  = ply;
    pidx = pi;
   }
  }
 
- return t_m;
+ /* map d^2 => d */
+ min = sqrt(min);
+
+ /* is point inside a polygon?  */
+ if( pnpoly(P[pidx], p) ) {
+  min = -min;
+ }
+
+ return min;
 }
 
 /* ************************************************************************* */
@@ -373,6 +381,11 @@ int main(int argc, char *argv[])
 
 #define WIN_W 1024
 #define WIN_H 1024
+
+/* sdf: -1 := inside of a polygon to the edge. +1 := outside of a polygon to the edge. */
+/* idx: index of a polygon => pixel {x,y}                                              */
+static double sdf_polygon[WIN_W][WIN_H];
+static size_t idx_polygon[WIN_W][WIN_H];
 
  /* create actual X11 window.
     create shared memory that will be used later
@@ -526,7 +539,7 @@ int main(int argc, char *argv[])
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
     pt2d      p   = {x,y};
     pt2d      v0, v1;
-    double    d2;
+    double    d;
     double    t = 0.0; /* pure dst color */
     size_t    idx;
 
@@ -536,8 +549,7 @@ int main(int argc, char *argv[])
     /* vertex */
 	for(std::vector<pt2d> &vertices : polygons) { /* all polygons */
      for(auto &v : vertices) { /* vertices */
-	  d2 = distance_sq(p, v);
-      if(d2 < r_2) { /* its a vertex pixel */
+      if(distance_sq(p, v) < r_2) { /* its a vertex pixel */
        src_c = c_v;
        t     = 1.0; /* pure src color */
        goto l_mix_colour;
@@ -545,19 +557,16 @@ int main(int argc, char *argv[])
      }
     }
 
-    /* is pixel inside a polygon? */
-    for(auto &polygon :  polygons) {
-     if( pnpoly(polygon, p) ) { /* https://wrfranklin.org/Research/Short_Notes/pnpoly.html */
-      fout_c = vec4d(1.0, c_b);
-      goto l_end_pixel;
-     }
+    /* check every line segment, of every polygon, for the distance  */
+	d = dist_all_polygons(polygons, p, idx) / 2.0; /* map from {0, 2} to {0, 1} */
+    sdf_polygon[pix_x][pix_y] = d;
+    idx_polygon[pix_x][pix_y] = idx;
+    if( d < 0.0 ) { /* is pixel inside a polygon? */
+     fout_c = vec4d(1.0, c_b);
+     goto l_end_pixel;
     }
-
-    /* check every line segment, of every polygon, for the distance */
-	t      = sq_dist_all_polygons(polygons, p, idx);
-	t      = sqrt(t) / 2.0; /* to normal t, will be within {0, 1} */
-    t      = 1.0; /* disregard distance for now. only interested in polygon index. */
-    if(t < (10.0 * U)) { /* limit distance field */
+    t = 1.0; /* disregard distance for now. only interested in polygon index. */
+    if(d < (10.0 * U)) { /* limit distance field */
      src_c = c_r;
     } else {
      src_c = c_pdf[idx];
