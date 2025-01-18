@@ -476,6 +476,13 @@ static size_t idx_polygon[WIN_W][WIN_H];
   }
  }
 
+ /* assert that image buffer is of supported format */
+ assert(xcb_ctx.img_raster_buf.bpp == 32);
+ assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
+ assert(xcb_ctx.img_raster_buf.stride % (xcb_ctx.img_raster_buf.bpp / CHAR_BIT) == 0);
+ assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
+ assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
+
  /* display polygon vertices */
  {
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
@@ -484,18 +491,6 @@ static size_t idx_polygon[WIN_W][WIN_H];
   double    U    = 2.0 / std::min(bf_w, bf_h);
   double    R    = 7.0 * U;
 
-  assert(xcb_ctx.img_raster_buf.bpp == 32);
-  assert(xcb_ctx.img_raster_buf.bpp % CHAR_BIT == 0);
-  assert(xcb_ctx.img_raster_buf.stride % (xcb_ctx.img_raster_buf.bpp / CHAR_BIT) == 0);
-  assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
-  assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
-
-  double  th     = 3.0 * U;   /* thickness */
-  double  th_2   = th * th;   /* thinckness squared */
-  double  bl     = 1.0 * U;   /* blend distance */
-  double  lim    = th + bl;   /* limit to test distance function for the line */
-  double  lim_2  = lim * lim; /* limit squared */
-  double  r_2    = R * R;     /* vertex circle radius squared */
   /* colors */
   vec3d   c_v    = vec3d(0.0, 0.0, 1.0);  /* RGB, BLUE  */
   vec3d   c_c    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
@@ -517,22 +512,6 @@ static size_t idx_polygon[WIN_W][WIN_H];
    goto main_terminate;
   }
 
-  printf(" ! U   : %f\n", U);
-  printf(" ! U2  : %f\n", U * U);
-  printf(" ! R   : %f\n", R);
-  printf(" ! th_2: %f\n", th_2);
-  printf(" ! L2  : %f\n", lim_2);
-  printf(" ! lim : %f\n", lim);
-
-  printf(" LERP: %f\n", std::lerp(1.0, 0.0, 1.0));
-  vec3d vec = mix( vec3d{1.0, 1.0, 1.0}, vec3d{0.0, 0.0, 0.0}, 1.0);
-  printf(" MIX : %f\n", vec.x);
-  vec4d out_c = vec4d(mix(vec3d{1.0, 1.0, 1.0}, {0,0,0}, 1.0), 1.0);
-  printf(" MIX : %f %f %f %f\n", out_c.x, out_c.y, out_c.z, out_c.w);
-  out_c.x = 2.0; out_c.y = 0.0; out_c.z = 0.0; out_c.w = 0.0;
-  printf(" UI  : %08x\n", ui_argb(out_c));
-  printf(" 100 x U  : %08f\n", 100.0 * U);
-
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
@@ -549,7 +528,7 @@ static size_t idx_polygon[WIN_W][WIN_H];
     /* vertex */
 	for(std::vector<pt2d> &vertices : polygons) { /* all polygons */
      for(auto &v : vertices) { /* vertices */
-      if(distance_sq(p, v) < r_2) { /* its a vertex pixel */
+      if(distance_sq(p, v) < (R * R)) { /* its a vertex pixel */
        src_c = c_v;
        t     = 1.0; /* pure src color */
        goto l_mix_colour;
