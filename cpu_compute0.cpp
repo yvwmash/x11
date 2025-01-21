@@ -247,12 +247,18 @@ static auto dist_segment(pt2d p, pt2d v, pt2d w) -> double {
 
 /* ************************************************************************* */
 
+static auto distance_sq(auto &l, auto &r) -> double {
+ return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
+}
+
+/* ************************************************************************* */
+
 /* return minimum distance between line segment vw and point p */
 static auto sq_dist_segment(pt2d p, pt2d v, pt2d w) -> double {
  vec2d  r  = w - v;
  double l2 = r.x * r.x + r.y * r.y;  /* segment length squared */
 
- if (l2 == 0.0) return distance(p, v);   /* v == w case */
+ if (l2 == 0.0) return distance_sq(p, v);   /* v == w case */
  /* consider the line extending the segment, parameterized as v + t (w - v). */
  /* find projection of point p onto the line.                                */
  /* it falls where t = [(p-v) . (w-v)] / |w-v|^2                             */
@@ -262,10 +268,6 @@ static auto sq_dist_segment(pt2d p, pt2d v, pt2d w) -> double {
  v = v + t * r;  /* projection falls on the segment */
  r = v - p;
  return r.x*r.x + r.y*r.y; /* squared distance */
-}
-
-static auto distance_sq(auto &l, auto &r) -> double {
- return pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0);
 }
 
 /* ************************************************************************* */
@@ -493,7 +495,7 @@ static size_t idx_polygon[WIN_W][WIN_H];
 
   /* colors */
   vec3d   c_v    = vec3d(0.0, 0.0, 1.0);  /* RGB, BLUE  */
-  vec3d   c_c    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
+  vec3d   c_w    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
   vec3d   c_b    = vec3d(0.0, 0.0, 0.0);  /* RGB, BLACK */
   vec3d   c_r    = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
   const vec3d c_pdf[4]  = { /* RGB, polygon closest points */
@@ -540,6 +542,20 @@ static size_t idx_polygon[WIN_W][WIN_H];
 
      /* not a vertex */
      if( d < 0.0 ) { /* is pixel inside a polygon? */
+      double             d_seg;
+      std::vector<pt2d> &V = polygons[idx];
+
+      /* is pixel having more than one closest point on the object's boundary? */
+      for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
+       /* squared distance to polygon segment */
+       d_seg = dist_segment(p, V[vi], V[vi + 1]) / 2.0; /* map from {0, 2} to {0, 1} */
+       if(!(std::bit_cast<uint64_t>(d) == std::bit_cast<uint64_t>(d_seg)) && (std::abs(d - d_seg) < (U / 2.0))) {
+        printf("\t d: %.8f %.8f %.8f\n", d, d_seg, U * U);
+        fout_c = vec4d(1.0, c_w);
+        goto l_end_pixel0;
+       }
+      }
+
       fout_c = vec4d(1.0, c_b);
       goto l_end_pixel0;
      }
@@ -566,8 +582,6 @@ l_end_pixel0: ;
 
   /* colors */
   vec3d   c_white = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
-  vec3d   dst_c;
-  vec3d   src_c;
   vec4d   fout_c;
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
@@ -576,8 +590,6 @@ l_end_pixel0: ;
     double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
     pt2d      p   = {x,y};
     size_t    idx00, idx01, idx10, idx11;
-
-
 
     idx00 = idx_polygon[pix_x                                 ] [pix_y    ];
     idx01 = idx_polygon[std::clamp(pix_x + 1, pix_x, bf_w - 1)] [pix_y    ];
@@ -591,17 +603,8 @@ l_end_pixel0: ;
      aux_raster_putpix(pix_x, pix_y + 1, ui_argb(fout_c), pbf);
      aux_raster_putpix(pix_x + 1, pix_y + 1, ui_argb(fout_c), pbf);
     }
-
-    /* check every  */
-	//~ d   = sdf_polygon[pix_x][pix_y];
-
-//~ l_mix_colour1:
-    //~ fout_c = vec4d(1.0, mix(dst_c, src_c, t));
-//~ l_end_pixel1: ;
-    //~ aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
    }
   }
-
  }
 
  /* loop untill exit signal arrives, or until window is closed */
