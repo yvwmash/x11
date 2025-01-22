@@ -529,7 +529,10 @@ static size_t idx_polygon[WIN_W][WIN_H];
 	d = dist_all_polygons(polygons, p, idx) / 2.0; /* map from {0, 2} to {0, 1} */
     sdf_polygon[pix_x][pix_y] = d;
     idx_polygon[pix_x][pix_y] = idx;
-    if( d < R ) { /* can it be a vertex pixels? */
+    if(d < 0.0) { /* is point inside a polygon? */
+     fout_c = vec4d(1.0, c_b);
+	 goto l_end_pixel0;
+    } else if( d < R ) { /* can it be a vertex pixels? */
      /* vertex */
 	 for(std::vector<pt2d> &V : polygons) { /* all polygons */
       for(auto &v : V) { /* vertices */
@@ -538,26 +541,6 @@ static size_t idx_polygon[WIN_W][WIN_H];
         goto l_end_pixel0;
        }
       }
-     }
-
-     /* not a vertex */
-     if( d < 0.0 ) { /* is pixel inside a polygon? */
-      double             d_seg;
-      std::vector<pt2d> &V = polygons[idx];
-
-      /* is pixel having more than one closest point on the object's boundary? */
-      for(size_t vi = 0; vi < (V.size() - 1); vi += 1) {
-       /* squared distance to polygon segment */
-       d_seg = dist_segment(p, V[vi], V[vi + 1]) / 2.0; /* map from {0, 2} to {0, 1} */
-       if(!(std::bit_cast<uint64_t>(d) == std::bit_cast<uint64_t>(d_seg)) && (std::abs(d - d_seg) < (U / 2.0))) {
-        printf("\t d: %.8f %.8f %.8f\n", d, d_seg, U * U);
-        fout_c = vec4d(1.0, c_w);
-        goto l_end_pixel0;
-       }
-      }
-
-      fout_c = vec4d(1.0, c_b);
-      goto l_end_pixel0;
      }
     }
 
