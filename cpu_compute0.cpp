@@ -498,11 +498,14 @@ static size_t idx_polygon[WIN_W][WIN_H];
   vec3d   c_w    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
   vec3d   c_b    = vec3d(0.0, 0.0, 0.0);  /* RGB, BLACK */
   vec3d   c_r    = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
-  const vec3d c_pdf[4]  = { /* RGB, polygon closest points */
+  const vec3d c_pdf[7]  = { /* RGB, polygon closest points */
    {78.0 / 255.0, 6.0 / 255.0, 122.0 / 255.0},
    {161.0 / 255.0, 95.0 / 255.0, 8.0 / 255.0},
    {168.0 / 255.0, 196.0 / 255.0, 8.0 / 255.0},
    {2.0 / 255.0, 191.0 / 255.0, 100.0 / 255.0},
+   {139.0 / 255.0, 41.0 / 255.0, 163.0 / 255.0},
+   {168.0 / 255.0, 35.0 / 255.0, 108.0 / 255.0},
+   {148.0 / 255.0, 179.0 / 255.0, 71.0 / 255.0},
   };
   vec3d   dst_c;
   vec3d   src_c;
