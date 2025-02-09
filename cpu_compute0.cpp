@@ -16,19 +16,6 @@ extern "C" {
 #include <sys/event.h>
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
-#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-
-extern "C" {
-#include <json-c/json.h>
-}
-
-#pragma clang diagnostic pop
-
-
 extern "C" {
 #include "aux_egl.h"
 #include "aux_gl.h"
@@ -36,51 +23,10 @@ extern "C" {
 
 #include "vg_algebra/geometry.h"
 
-/* C++, OpenCV */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdocumentation"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
-#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
-#pragma clang diagnostic ignored "-Wreserved-identifier"
-#pragma clang diagnostic ignored "-Wcast-align"
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#pragma clang diagnostic ignored "-Wweak-vtables"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wextra-semi-stmt"
-#pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-dtor"
-#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
-#pragma clang diagnostic ignored "-Wsuggest-destructor-override"
-#pragma clang diagnostic ignored "-Wdouble-promotion"
-#pragma clang diagnostic ignored "-Wswitch-default"
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#pragma clang diagnostic ignored "-Wextra-semi"
-#pragma clang diagnostic ignored "-Wdeprecated-anon-enum-enum-conversion"
-#pragma clang diagnostic ignored "-Wnewline-eof"
-#pragma clang diagnostic ignored "-Wdocumentation-unknown-command" /*  */
-#pragma clang diagnostic ignored "-Wfloat-conversion" /* C style casts, all legal */
-#pragma clang diagnostic ignored "-Wimplicit-float-conversion"
-#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#pragma clang diagnostic ignored "-Wexit-time-destructors" /* warning: declaration requires an exit-time destructor => static cv::Mutex mutex; */
-#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast" /* yes they do know their trade */
-#pragma clang diagnostic ignored "-Wimplicit-int-float-conversion" /* hope they know their trade */
-#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
-#pragma clang diagnostic ignored "-Wshadow-field" /* thats unfortunate :p */
-#pragma clang diagnostic ignored "-Wc11-extensions" /* warning: '_Atomic' is a C11 extension [-Wc11-extensions] */
-#pragma clang diagnostic ignored "-Wcast-qual" /* drop constness, perfectly OK for C style */
-#pragma clang diagnostic ignored "-Wpadded" /* struct padding, OK */
-#pragma clang diagnostic ignored "-Wfloat-equal" /* all case are safe to a degree. still better use epsilons */
-#pragma clang diagnostic ignored "-Wsign-conversion" /* no explicit conversion */
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage" /* hundredth of it. isn't the "p + off" is a normal way to access memory in C/C++? */
-
-#include <opencv2/opencv.hpp>
-
-#pragma clang diagnostic pop
-
 extern "C" {
 #include "aux_xcb.h"
 #include "aux_drm.h"
+#include "aux_svg.h"
 }
 
 /* C++ */
@@ -109,7 +55,7 @@ static          bool f_display_change   = false; /* */
 
 /* ============================================================================================== */
 
-/* ************************************************************************* */
+/* **********************************************************libgdal*************** */
 
 static int filter_signals(int kq_fd, sigset_t *mask_save) {
  int               status = 0;
@@ -156,76 +102,6 @@ static int filter_signals(int kq_fd, sigset_t *mask_save) {
 l_end_flt_signals:
  return status;
 }
-
-/* ************************************************************************* */
-
-static int read_contours(const char *fn, std::vector<std::vector<pt2d>> &out) {
- int                 status = 0;
- int                 fd = open(fn, O_CLOEXEC|O_RDONLY);
- struct json_object *parsed_json = NULL;
- size_t              np;
-
- if (fd < 0) {
-  fprintf(stderr, " * open contours file %s\n\t%s\n", fn, strerror(errno));
-  status = 1;
-  goto l_end_read_contours;
- }
-
- parsed_json = json_object_from_fd(fd);
- close(fd);
-
- if ((NULL == parsed_json) || (json_object_get_type(parsed_json) != json_type_array)) {
-  fprintf(stderr, " * parsing JSON or invalid format\n");
-  status = 2;
-  goto l_end_read_contours;
- }
-
- /* # of polygons */
- np = json_object_array_length(parsed_json);
- out.reserve(np); /* reserve # polygons */
-
- /* iterate through polygons */
- for (unsigned pi = 0; pi < np; pi += 1) {
-  struct json_object *a_poly = json_object_array_get_idx(parsed_json, pi);
-  size_t              n;
-  std::vector<pt2d>   vp;
-
-  if (!a_poly || (json_object_get_type(a_poly) != json_type_array)) {
-   fprintf(stderr, " * invalid polygon format at index %u\n", pi);
-   continue;
-  }
-
-  /* vertices in a polygon */
-  n = json_object_array_length(a_poly);
-  vp.reserve(n); /* reserve for # vertices */
-
-  /* polygon contour */
-  for (unsigned ci = 0; ci < n; ci += 1) {
-   struct json_object *pt = json_object_array_get_idx(a_poly, ci);
-   struct json_object *x, *y;
-   pt2d                point;
-
-   /* add a point to polygon */
-   if (json_object_object_get_ex(pt, "x", &x) && json_object_object_get_ex(pt, "y", &y)) {
-    vp.emplace_back((double)json_object_get_double(x), (double)json_object_get_double(y));
-   } else {
-    fprintf(stderr, " * invalid point format at polygon %u, vertex %u\n", pi, ci);
-   }
-  }
-
-  out.emplace_back(vp); /* vp will be created anew next iteration */
- }
-
-l_end_read_contours:
- if(NULL != parsed_json) {
-  json_object_put(parsed_json);
- }
-
- return status;
-}
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
 
 /* ************************************************************************* */
 
@@ -324,6 +200,66 @@ static unsigned pnpoly(const std::vector<pt2d> &polygon, const pt2d &pt) {
  return (unsigned)c;
 }
 
+/* ************************************************************************* */
+
+/* polygons             */
+static std::vector<std::vector<pt2d>>  polygons;
+static std::vector<svg_coordinate>     svg_stack_coordinates;
+static std::vector<pt2d>               svg_polygon;
+
+extern "C" {
+
+static unsigned svg_moveto(aux_svg_ctx_t *ctx, svg_coordinate to_point)
+{
+ (void)ctx;
+
+ svg_polygon.clear();
+ svg_polygon.push_back({ to_point.x, to_point.y });
+
+ return 0;
+}
+
+static unsigned svg_lineto(aux_svg_ctx_t *ctx, svg_coordinate to_point)
+{
+ (void)ctx;
+
+ svg_polygon.push_back({ to_point.x, to_point.y });
+ return 0;
+}
+
+static unsigned svg_closepath(aux_svg_ctx_t *ctx, svg_coordinate initial_point)
+{
+ (void)ctx;
+ (void)initial_point;
+ return 0;
+}
+
+static unsigned svg_push_coordinate(double x, double y)
+{
+ svg_stack_coordinates.push_back({x, y});
+ return 0;
+}
+
+static svg_coordinate svg_get_coordinate(unsigned index)
+{
+ return svg_stack_coordinates[index];
+}
+
+static unsigned svg_end_path(void)
+{
+ polygons.push_back(svg_polygon);
+
+ return 0;
+}
+
+static unsigned svg_clear_stack(void)
+{
+ svg_stack_coordinates.clear();
+ return 0;
+}
+
+} /* extern C */
+
 /* ============================================================================================== */
 
 /* */
@@ -340,14 +276,29 @@ int main(int argc, char *argv[])
  aux_xcb_ctx              xcb_ctx;
  aux_drm_ctx              drm_ctx;
 
- /* polygons             */
- std::vector<std::vector<pt2d>> polygons;
-
  /* zero xcb context */
  aux_zero_xcb_ctx(&xcb_ctx);
 
  /* zero drm context */
  aux_drm_zero_ctx(&drm_ctx);
+
+ {
+  aux_svg_zero_ctx();
+  aux_svg_init_ctx();
+
+  aux_svg_set_moveto_cb(svg_moveto);
+  aux_svg_set_lineto_cb(svg_lineto);
+  aux_svg_set_push_coordinate_cb(svg_push_coordinate);
+  aux_svg_set_get_coordinate_cb(svg_get_coordinate);
+  aux_svg_set_closepath_cb(svg_closepath);
+  aux_svg_set_end_path_cb(svg_end_path);
+  aux_svg_set_clear_stack_cb(svg_clear_stack);
+
+  if(0 != aux_svg_parse_fn("bitmap.svg")) {
+   status = 1;
+   goto main_terminate;
+  }
+ }
 
  /* connect XCB, create window
     various extensions of the X11 server will be checked here.
@@ -485,6 +436,23 @@ static size_t idx_polygon[WIN_W][WIN_H];
  assert((xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_ARGB) || (xcb_ctx.img_raster_buf.color_unit == AUX_RASTER_COLOR_UNIT32_XRGB));
  assert(xcb_ctx.img_raster_buf.byte_order == AUX_RASTER_COLOR_UNIT32_LSB_FIRST);
 
+ /* map polygon coordinates to {-1, +1} range
+  * mirror each y coordinate
+ */
+ {
+  unsigned  bf_w = xcb_ctx.img_raster_buf.w;
+  unsigned  bf_h = xcb_ctx.img_raster_buf.h;
+
+  for( auto &P : polygons ) {
+   for ( auto &v : P ) {
+    double    x   = 2.0 * v.x / (double)bf_w - 1.0;
+    double    y   = 2.0 * v.y / (double)bf_h - 1.0;
+    v.x =  x;
+    v.y = -y;
+   }
+   printf("\n");
+  }
+ }
  /* display polygon distance fields */
  {
   unsigned  bf_w = xcb_ctx.img_raster_buf.w;
@@ -510,12 +478,6 @@ static size_t idx_polygon[WIN_W][WIN_H];
   vec3d   dst_c;
   vec3d   src_c;
   vec4d   fout_c;
-
-  /* read polygon contours */
-  if(0 != read_contours("./out/out0.json", polygons)) {
-   status = 2;
-   goto main_terminate;
-  }
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {

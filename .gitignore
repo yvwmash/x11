@@ -3,3 +3,7 @@ build/
 out/
 *.swp
 make.out
+svg/yy.svg_docu.output
+svg/yy.svg_docu.tab.c
+svg/yy.svg_docu.tab.h
+svg/lex.svg_docu.c
