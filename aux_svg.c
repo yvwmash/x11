@@ -44,6 +44,18 @@ void  aux_svg_set_pe_state(svg_st_pen_t st)
 }
 
 /* */
+svg_st_t aux_svg_get_op_state(void)
+{
+ return st_op;
+}
+
+/* */
+svg_st_pen_t aux_svg_get_pe_state(void)
+{
+ return st_pe;
+}
+
+/* */
 void aux_svg_set_moveto_cb(pfn_moveto p)
 {
  svg_ctx.fn_moveto = p;
@@ -86,10 +98,27 @@ void aux_svg_set_clear_stack_cb(pfn_clear_stack p)
 }
 
 /* */
-void aux_svg_moveto(void)
+static unsigned lineto(unsigned stack_b, unsigned stack_e)
 {
  svg_coordinate tp = {0.0, 0.0};
 
+ /* produce segments */
+ for(; stack_b < stack_e; stack_b += 1) {
+  tp = svg_ctx.fn_get_coordinate(stack_b);
+  if(ST_PEN_REL == st_pe) {
+   tp.x += svg_ctx.current_point.x;
+   tp.y += svg_ctx.current_point.y;
+  }
+  svg_ctx.fn_lineto(&svg_ctx, tp);
+  svg_ctx.current_point = tp; /* set current point */
+ }
+
+ return stack_b;
+}
+
+/* */
+void aux_svg_moveto(void)
+{
  assert(svg_ctx.coordinates_stack_e > 0);
  assert(st_op != ST_ERROR);
  assert((st_op == ST_MOVETO_START_PATH) || (st_op == ST_MOVETO_SUBPATH));
@@ -115,16 +144,23 @@ void aux_svg_moveto(void)
  svg_ctx.fn_moveto(&svg_ctx, svg_ctx.initial_point);
 
  /* produce segments */
- for(svg_ctx.coordinates_stack_b = 1; svg_ctx.coordinates_stack_b < svg_ctx.coordinates_stack_e; svg_ctx.coordinates_stack_b += 1) {
-  tp = svg_ctx.fn_get_coordinate(svg_ctx.coordinates_stack_b);
-  if(ST_PEN_REL == st_pe) {
-   tp.x += svg_ctx.current_point.x;
-   tp.y += svg_ctx.current_point.y;
-  }
-  svg_ctx.fn_lineto(&svg_ctx, tp);
-  svg_ctx.current_point = tp; /* set current point */
- }
+ svg_ctx.coordinates_stack_b = lineto(1, svg_ctx.coordinates_stack_e);
+ assert(svg_ctx.coordinates_stack_b == svg_ctx.coordinates_stack_e);
 
+ /* clear stack */
+ svg_ctx.coordinates_stack_b = 0;
+ svg_ctx.coordinates_stack_e = 0;
+ svg_ctx.fn_clear_stack();
+}
+
+/* */
+void aux_svg_lineto(void)
+{
+ assert(svg_ctx.coordinates_stack_e > 0);
+ assert(st_op != ST_ERROR);
+ assert((st_op == ST_LINETO) || (st_op == ST_LINETO_V) || (st_op == ST_LINETO_H));
+
+ svg_ctx.coordinates_stack_b = lineto(0, svg_ctx.coordinates_stack_e);
  assert(svg_ctx.coordinates_stack_b == svg_ctx.coordinates_stack_e);
 
  /* clear stack */

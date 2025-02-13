@@ -88,6 +88,12 @@ static int attrib_typ   = ATTRIB_TYP_ERROR;
 
 <PATH_ATTRIBUTE>"M"                         { PUT_STOKEN() return 'M'; }
 <PATH_ATTRIBUTE>"m"                         { PUT_STOKEN() return 'm'; }
+<PATH_ATTRIBUTE>"l"                         { PUT_STOKEN() return 'l'; }
+<PATH_ATTRIBUTE>"L"                         { PUT_STOKEN() return 'L'; }
+<PATH_ATTRIBUTE>"h"                         { PUT_STOKEN() return 'h'; }
+<PATH_ATTRIBUTE>"H"                         { PUT_STOKEN() return 'H'; }
+<PATH_ATTRIBUTE>"v"                         { PUT_STOKEN() return 'v'; }
+<PATH_ATTRIBUTE>"V"                         { PUT_STOKEN() return 'V'; }
 <PATH_ATTRIBUTE>"z"                         { PUT_STOKEN() return 'Z'; }
 <PATH_ATTRIBUTE>"Z"                         { PUT_STOKEN() return 'z'; }
 <PATH_ATTRIBUTE>[+-]?([0-9]*[.])?[0-9]+     { PUT_STOKEN() return ATTRIBUTE_FLOAT_VALUE; }

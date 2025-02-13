@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
   aux_svg_set_end_path_cb(svg_end_path);
   aux_svg_set_clear_stack_cb(svg_clear_stack);
 
-  if(0 != aux_svg_parse_fn("bitmap.svg")) {
+  if(0 != aux_svg_parse_fn("bitmap1.svg")) {
    status = 1;
    goto main_terminate;
   }
@@ -466,7 +466,6 @@ static size_t idx_polygon[WIN_W][WIN_H];
     v.x =  x;
     v.y = -y;
    }
-   printf("\n");
   }
  }
  /* display polygon distance fields */
@@ -481,7 +480,7 @@ static size_t idx_polygon[WIN_W][WIN_H];
   vec3d   c_v    = vec3d(0.0, 0.0, 1.0);  /* RGB, BLUE  */
   vec3d   c_w    = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
   vec3d   c_b    = vec3d(0.0, 0.0, 0.0);  /* RGB, BLACK */
-  vec3d   c_r    = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
+  vec3d   c_r    = vec3d(30.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0);  /* RGB, GREEN */
   const vec3d c_pdf[7]  = { /* RGB, polygon closest points */
    {78.0 / 255.0, 6.0 / 255.0, 122.0 / 255.0},
    {161.0 / 255.0, 95.0 / 255.0, 8.0 / 255.0},
@@ -525,7 +524,7 @@ static size_t idx_polygon[WIN_W][WIN_H];
      }
     }
 
-    if(d < (10.0 * U)) { /* limit distance field */
+    if(d < (1.0 * U)) { /* limit distance field */
      fout_c = vec4d(1.0, c_r);
     } else {
      fout_c = vec4d(1.0, c_pdf[idx]);

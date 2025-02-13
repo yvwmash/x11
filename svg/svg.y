@@ -161,8 +161,36 @@ closepath:
 	;
 
 lineto:
-	  'l' coordinate_pair_sequence
-	| 'L' coordinate_pair_sequence
+	lineto_xy
+	| vertical_lineto
+	| horizontal_lineto
+	;
+
+lineto_xy:
+	{ aux_svg_set_op_state(ST_LINETO); }  'l' coordinate_pair_sequence { aux_svg_set_pe_state(ST_PEN_REL); aux_svg_lineto(); }
+	{ aux_svg_set_op_state(ST_LINETO); }| 'L' coordinate_pair_sequence { aux_svg_set_pe_state(ST_PEN_ABS); aux_svg_lineto(); }
+	;
+
+vertical_lineto:
+	{ aux_svg_set_op_state(ST_LINETO_V); }  'v' coordinate_sequence { aux_svg_set_pe_state(ST_PEN_REL); aux_svg_lineto(); }
+	{ aux_svg_set_op_state(ST_LINETO_V); }| 'V' coordinate_sequence { aux_svg_set_pe_state(ST_PEN_ABS); aux_svg_lineto(); }
+	;
+
+horizontal_lineto:
+	{ aux_svg_set_op_state(ST_LINETO_H); }  'h' coordinate_sequence { aux_svg_set_pe_state(ST_PEN_REL); aux_svg_lineto(); }
+	{ aux_svg_set_op_state(ST_LINETO_H); }| 'H' coordinate_sequence { aux_svg_set_pe_state(ST_PEN_ABS); aux_svg_lineto(); }
+	;
+
+coordinate_sequence:
+	/* empty */
+	| coordinate coordinate_sequence { double v;
+                                       v = strtod($1.sval.ps, NULL);
+                                       switch(aux_svg_get_op_state()) {
+                                        case ST_LINETO_V: aux_svg_push_coordinate(0.0 , v);              break;
+                                        case ST_LINETO_H: aux_svg_push_coordinate(v   , 0.0);              break;
+                                        default: yyerror("singe coordinate sequence, not handled state"); break;
+                                       }
+      }
 	;
 
 coordinate_pair_sequence:

@@ -13,7 +13,10 @@ extern int aux_svg_parse_fn(const char *path);
 typedef enum {
     ST_ERROR             = 1,
     ST_MOVETO_START_PATH = 2,
-    ST_MOVETO_SUBPATH    = 3
+    ST_MOVETO_SUBPATH    = 3,
+    ST_LINETO            = 4,
+    ST_LINETO_V          = 5,
+    ST_LINETO_H          = 6
 } svg_st_t;
 
 typedef enum {
@@ -60,13 +63,18 @@ void             aux_svg_set_get_coordinate_cb(pfn_get_coordinate p);
 void             aux_svg_set_closepath_cb(pfn_closepath p);
 void             aux_svg_set_end_path_cb(pfn_end_path p);
 void             aux_svg_set_clear_stack_cb(pfn_clear_stack p);
+
 void             aux_svg_moveto(void);
+void             aux_svg_lineto(void);
 void             aux_svg_closepath(void);
 void             aux_svg_end_path();
+
 svg_coordinate   aux_svg_get_current_point();
 svg_coordinate   aux_svg_get_initial_point();
 void             aux_svg_set_op_state(svg_st_t     st_op);
 void             aux_svg_set_pe_state(svg_st_pen_t st_pen);
+svg_st_t         aux_svg_get_op_state(void);
+svg_st_pen_t     aux_svg_get_pe_state(void);
 
 #ifdef __cplusplus
 }

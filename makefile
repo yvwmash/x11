@@ -152,7 +152,7 @@ bin/cpu_compute0: $(OBJ_PARSER) $(OBJ_XCB) $(OBJ_DRM) $(OBJ_VG) $(OBJ_CPU_COMPUT
 
 LEX_YACC_NO_WARN=-Wno-missing-variable-declarations -Wno-unused-macros -Wno-switch-default\
                  -Wno-unused-function -Wno-implicit-fallthrough -Wno-extra-semi-stmt -Wno-reserved-macro-identifier\
-                 -Wno-unreachable-code -Wno-padded
+                 -Wno-unreachable-code -Wno-padded -Wno-switch-enum
 
 ./build/aux_svg.o: aux_svg.h aux_svg.c
 	$(CC) $(PFLAGS) -c aux_svg.c -o ./build/aux_svg.o $(CFLAGS)
