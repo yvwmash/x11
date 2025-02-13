@@ -63,8 +63,7 @@ pt2<I> operator / (const pt2<I>& v, I  s);
 
 /* distance between two points */
 template <typename I>
-I distance(const pt2<I>& l, const pt2<I>& r);
-
+double distance(const pt2<I>& l, const pt2<I>& r);
 /* +++ */
 
 /* explicit conversion */
@@ -131,6 +130,10 @@ pt2<I> operator - (const pt2<I>& p){
 
 /* equality */
 template <>
+bool operator == (const pt2<int>& l, const pt2<int>& r){
+ return (l.x == r.x) && (l.y == r.y);
+}
+template <>
 bool operator == (const pt2<float>& l, const pt2<float>& r){
  return eq_eps(l.x, r.x) && eq_eps(l.y, r.y);
 }
@@ -159,10 +162,9 @@ pt2<I> operator - (const pt2<I>& p, const vec2<I>& v){
 
 /* distance between two points */
 template <typename I>
-I distance(const pt2<I>& l, const pt2<I>& r){
- return sqrt(pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0));
+double distance(const pt2<I>& l, const pt2<I>& r){
+ return std::sqrt(pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0));
 }
-
 /* *** */
 
 typedef pt2<float>  pt2f;

@@ -571,28 +571,58 @@ l_end_pixel0: ;
 
  /* scan 3x3 pixel area. display polygon distance border anchors. */
  {
-  unsigned  bf_w    = xcb_ctx.img_raster_buf.w;
-  unsigned  bf_h    = xcb_ctx.img_raster_buf.h;
-  int       clamp_x = (int)bf_w - 1;
-  int       clamp_y = (int)bf_h - 1;
-  auto     *pbf     = &xcb_ctx.img_raster_buf;
+  unsigned           bf_w    = xcb_ctx.img_raster_buf.w;
+  unsigned           bf_h    = xcb_ctx.img_raster_buf.h;
+  int                clamp_x = (int)bf_w - 1;
+  int                clamp_y = (int)bf_h - 1;
+  auto              *pbf     = &xcb_ctx.img_raster_buf;
+  std::vector<pt2i>  P;
+  size_t             asize;
+  std::vector<bool>  visited;
+  size_t             count;
+  int                sum_x, sum_y;
 
   /* colors */
-  vec3d   c_white = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
-  vec3d   c_red   = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
-  vec4d   fout_c;
+  vec4d   c_red = vec4d(1.0, 1.0, 0.0, 0.0);  /* RGB, RED   */
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
     unsigned  nunique = fn_check_block(pix_x, pix_y, clamp_x, clamp_y);
 
 	if(nunique > 2) {
-	 printf("NU > 2, {%u, %u}\n", pix_x, pix_y);
-
-	 fout_c = vec4d(1.0, c_red);
-	 aux_raster_putpix(pix_x,  pix_y,  ui_argb(fout_c), pbf);
+     pt2i p = {(int)pix_x, (int)pix_y};
+     P.emplace_back(p);
 	}
    }
+  }
+
+  /* group close positioned anchor points */
+  asize = P.size();
+  visited.assign(asize, false);
+  for (unsigned i = 0; i < asize; ++i) {
+   if (visited[i]) {
+    continue;
+   }
+   count = 0;
+   sum_x = 0;
+   sum_y = 0;
+   for (unsigned ci = 0; ci < asize; ci += 1) {
+    if (!visited[ci] && distance(P[i], P[ci]) < 3.0) {
+     visited[ci] = true;
+     sum_x      += P[ci].x;
+     sum_y      += P[ci].y;
+     count      += 1;
+    }
+   }
+
+   /* centroids of a set of close points */
+   double _1_n = 1.0 / (double)count;
+   anchor_points.push_back( {(unsigned)(_1_n * sum_x), (unsigned)(_1_n * sum_y) } );
+  }
+
+  /* color the points */
+  for ( auto &v : anchor_points ) {
+   aux_raster_putpix(v.x, v.y, ui_argb(c_red), pbf);
   }
  }
 

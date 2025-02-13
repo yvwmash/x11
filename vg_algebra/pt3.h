@@ -59,7 +59,7 @@ pt3<I> operator / (const pt3<I>& v, I  s);
 
 /* distance between two points */
 template <typename I>
-I distance(const pt3<I>& l, const pt3<I>& r);
+double distance(const pt3<I>& l, const pt3<I>& r);
 
 /* +++ */
 
@@ -137,8 +137,8 @@ pt3<I> operator / (const pt3<I>& v, I s) {
 
 /* distance between two points */
 template <typename I>
-I distance(const pt3<I>& l, const pt3<I>& r){
- return sqrt(pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0) + pow(r.z - l.z, 2.0));
+double distance(const pt3<I>& l, const pt3<I>& r){
+ return std::sqrt(pow(r.x - l.x, 2.0) + pow(r.y - l.y, 2.0) + pow(r.z - l.z, 2.0));
 }
 
 typedef pt3<float>  pt3f;
