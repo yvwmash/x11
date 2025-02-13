@@ -13,7 +13,7 @@ int aux_raster_putpix(uint32_t         x,
                       aux_raster_buf  *pixels)
 {
 #if AUX_RASTER_INVERT_Y_AXIS == 1
- y = pixels->h - y;
+ y = (pixels->h - 1) - y;
 #endif
 
  if(!(x < pixels->w)) {
@@ -34,7 +34,7 @@ uint32_t aux_raster_getpix(uint32_t         x,
                            aux_raster_buf  *pixels)
 {
 #if AUX_RASTER_INVERT_Y_AXIS == 1
- y = pixels->h - y;
+ y = (pixels->h - 1) - y;
 #endif
 
  if(!(x < pixels->w)) {

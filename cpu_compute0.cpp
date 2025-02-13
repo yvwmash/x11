@@ -38,6 +38,8 @@ extern "C" {
 /* ============================================================================================== */
 
 typedef pt2<double>  pt2d;
+typedef pt2<unsigned> pt2u;
+typedef pt2<int>      pt2i;
 typedef vec2<double> vec2d;
 typedef vec3<double> vec3d;
 typedef vec4<double> vec4d;
@@ -104,6 +106,9 @@ l_end_flt_signals:
 }
 
 /* ************************************************************************* */
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
 
 /* return minimum distance between line segment vw and point p */
 static auto dist_segment(pt2d p, pt2d v, pt2d w) -> double {
@@ -181,6 +186,8 @@ static auto dist_all_polygons(auto& P, pt2d& p, size_t &pidx) -> double {
  return min;
 }
 
+#pragma clang diagnostic pop
+
 /* ************************************************************************* */
 
 /* point in polygon test */
@@ -202,10 +209,17 @@ static unsigned pnpoly(const std::vector<pt2d> &polygon, const pt2d &pt) {
 
 /* ************************************************************************* */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+
 /* polygons             */
 static std::vector<std::vector<pt2d>>  polygons;
 static std::vector<svg_coordinate>     svg_stack_coordinates;
 static std::vector<pt2d>               svg_polygon;
+static std::vector<pt2u>               anchor_points;
+
+#pragma clang diagnostic pop
 
 extern "C" {
 
@@ -259,6 +273,8 @@ static unsigned svg_clear_stack(void)
 }
 
 } /* extern C */
+
+/* ************************************************************************* */
 
 /* ============================================================================================== */
 
@@ -522,35 +538,60 @@ l_end_pixel0: ;
 
  }
 
- /* scan 2x2 pixel area. display polygon distance borders. */
+ static const auto &fn_check_block = [](unsigned pix_x, unsigned pix_y, int clamp_x, int clamp_y) -> unsigned {
+  int x1 = (int)pix_x, x0 = (int)pix_x - 1, x2 = (int)pix_x + 1;
+  int y1 = (int)pix_y, y0 = (int)pix_y - 1, y2 = (int)pix_y + 1;
+  pt2i     b[9] = {
+   {x0, y0}, {x1, y0}, {x2, y0},
+   {x0, y1}, {x1, y1}, {x2, y1},
+   {x0, y2}, {x1, y2}, {x2, y2},
+  };
+  size_t   idx[9];
+  unsigned i = 0, nunique = 1;
+
+  /* assign block indices */
+  for(; i < 9; ++i) {
+   if( (b[i].x < 0) || (b[i].y < 0) || (b[i].x > clamp_x) || (b[i].y > clamp_y) ) {
+    idx[i] = UINT_MAX;
+   } else {
+    idx[i] = idx_polygon[b[i].x][b[i].y];
+   }
+  }
+
+  /* count unique indices */
+  std::sort(idx, idx + 9);
+  for(i = 0; i < 8; ++i) {
+   if(idx[i] != idx[i + 1]) {
+    nunique += 1;
+   }
+  }
+
+  return nunique;
+ };
+
+ /* scan 3x3 pixel area. display polygon distance border anchors. */
  {
-  unsigned  bf_w = xcb_ctx.img_raster_buf.w;
-  unsigned  bf_h = xcb_ctx.img_raster_buf.h;
-  auto     *pbf  = &xcb_ctx.img_raster_buf;
+  unsigned  bf_w    = xcb_ctx.img_raster_buf.w;
+  unsigned  bf_h    = xcb_ctx.img_raster_buf.h;
+  int       clamp_x = (int)bf_w - 1;
+  int       clamp_y = (int)bf_h - 1;
+  auto     *pbf     = &xcb_ctx.img_raster_buf;
 
   /* colors */
   vec3d   c_white = vec3d(1.0, 1.0, 1.0);  /* RGB, WHITE */
+  vec3d   c_red   = vec3d(1.0, 0.0, 0.0);  /* RGB, RED   */
   vec4d   fout_c;
 
   for(unsigned pix_x = 0; pix_x < bf_w; pix_x += 1) { /* pixels */
    for(unsigned pix_y = 0; pix_y < bf_h; pix_y += 1) {
-    double    x   = 2.0 * pix_x / (double)bf_w - 1.0;
-    double    y   = 2.0 * pix_y / (double)bf_h - 1.0;
-    pt2d      p   = {x,y};
-    size_t    idx00, idx01, idx10, idx11;
+    unsigned  nunique = fn_check_block(pix_x, pix_y, clamp_x, clamp_y);
 
-    idx00 = idx_polygon[pix_x                                 ] [pix_y    ];
-    idx01 = idx_polygon[std::clamp(pix_x + 1, pix_x, bf_w - 1)] [pix_y    ];
-    idx10 = idx_polygon[pix_x                                 ] [std::clamp(pix_y + 1, pix_y, bf_h - 1)];
-    idx11 = idx_polygon[std::clamp(pix_x + 1, pix_x, bf_w - 1)] [std::clamp(pix_y + 1, pix_y, bf_h - 1)];
+	if(nunique > 2) {
+	 printf("NU > 2, {%u, %u}\n", pix_x, pix_y);
 
-    if((idx00 != idx01) || (idx10 != idx11) || (idx00 != idx11)) {
-     fout_c = vec4d(1.0, c_white);
-     aux_raster_putpix(pix_x, pix_y, ui_argb(fout_c), pbf);
-     aux_raster_putpix(pix_x + 1, pix_y, ui_argb(fout_c), pbf);
-     aux_raster_putpix(pix_x, pix_y + 1, ui_argb(fout_c), pbf);
-     aux_raster_putpix(pix_x + 1, pix_y + 1, ui_argb(fout_c), pbf);
-    }
+	 fout_c = vec4d(1.0, c_red);
+	 aux_raster_putpix(pix_x,  pix_y,  ui_argb(fout_c), pbf);
+	}
    }
   }
  }
